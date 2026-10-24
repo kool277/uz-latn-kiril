@@ -12,6 +12,8 @@ echo "== Office ribbon (tools/add_ribbon.py)"
 python3 "$ROOT/tools/test_add_ribbon.py" > "$ROOT/build/ribbon-test.log" 2>&1 || fail=1
 grep -v "^  ok" "$ROOT/build/ribbon-test.log"
 echo "== Differential corpus"; node "$ROOT/tools/make_differential.mjs" || fail=1
+echo "== Dictionary miner (tools/mine_dictionary.py on a synthetic parallel corpus)"
+python3 "$ROOT/tools/test_mine_dictionary.py" | tail -1; [ "${PIPESTATUS[0]}" -eq 0 ] || fail=1
 echo "== Office add-in (manifests, logic against fake hosts)"
 node "$ROOT/platforms/office-addin/build.mjs" --check || fail=1
 node "$ROOT/platforms/office-addin/test/run.mjs" || fail=1
@@ -59,7 +61,7 @@ if [ -n "${GITHUB_ACTIONS:-}" ]; then :
 elif command -v swift >/dev/null 2>&1 || docker image inspect swift:6.4.1-noble >/dev/null 2>&1; then
   echo "== Swift core (platforms/ios: fixtures + differential)"
   if "$ROOT/platforms/ios/scripts/test.sh" > "$ROOT/build/swift-test.log" 2>&1; then
-    grep -E "^(212|differential)" "$ROOT/build/swift-test.log"
+    grep -E "^[0-9]+ passed, 0 failed \(fixtures|^differential" "$ROOT/build/swift-test.log"
   else
     tail -30 "$ROOT/build/swift-test.log"; fail=1
   fi
