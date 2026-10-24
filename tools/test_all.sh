@@ -35,7 +35,8 @@ if command -v soffice >/dev/null 2>&1 && python3 -c "import uno" 2>/dev/null; th
 else
   echo "== LibreOffice not available: Basic suite skipped"
 fi
-if command -v qmake6 >/dev/null 2>&1 || docker image inspect uztranslit-qt >/dev/null 2>&1; then
+if [ -n "${GITHUB_ACTIONS:-}" ]; then :
+elif command -v qmake6 >/dev/null 2>&1 || docker image inspect uztranslit-qt >/dev/null 2>&1; then
   echo "== Qt desktop (platforms/qt-desktop: fixtures, differential, CLI, GUI offscreen)"
   if command -v qmake6 >/dev/null 2>&1; then
     ( cd "$ROOT/platforms/qt-desktop" && cmake -S . -B "$ROOT/build/qt" -G Ninja >/dev/null && cmake --build "$ROOT/build/qt" >/dev/null && ctest --test-dir "$ROOT/build/qt" ) > "$ROOT/build/qt-test.log" 2>&1
@@ -46,13 +47,16 @@ if command -v qmake6 >/dev/null 2>&1 || docker image inspect uztranslit-qt >/dev
 else
   echo "== Qt 6 not available (no qmake6, no uztranslit-qt image): desktop skipped"
 fi
-if [ -n "${JAVA_HOME:-}" ] && { [ -n "${ANDROID_HOME:-}" ] || [ -f "$ROOT/platforms/android/local.properties" ]; }; then
+if [ -n "${GITHUB_ACTIONS:-}" ]; then
+  echo "== Android, Swift and Qt suites: run by their own workflows in CI"
+elif [ -n "${JAVA_HOME:-}" ] && { [ -n "${ANDROID_HOME:-}" ] || [ -f "$ROOT/platforms/android/local.properties" ]; }; then
   echo "== Kotlin core + Android app (platforms/android: fixtures, differential, unit tests)"
   ( cd "$ROOT/platforms/android" && ./gradlew --no-daemon -q test ) > "$ROOT/build/android-test.log" 2>&1 && echo "gradle test: ok" || { tail -30 "$ROOT/build/android-test.log"; fail=1; }
 else
   echo "== Android SDK or JDK not configured (JAVA_HOME, ANDROID_HOME): Kotlin core skipped"
 fi
-if command -v swift >/dev/null 2>&1 || docker image inspect swift:6.4.1-noble >/dev/null 2>&1; then
+if [ -n "${GITHUB_ACTIONS:-}" ]; then :
+elif command -v swift >/dev/null 2>&1 || docker image inspect swift:6.4.1-noble >/dev/null 2>&1; then
   echo "== Swift core (platforms/ios: fixtures + differential)"
   if "$ROOT/platforms/ios/scripts/test.sh" > "$ROOT/build/swift-test.log" 2>&1; then
     grep -E "^(212|differential)" "$ROOT/build/swift-test.log"

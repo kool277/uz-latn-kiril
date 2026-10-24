@@ -10,7 +10,7 @@ phone, offline: no permissions, nothing is sent anywhere. Interface in Uzbek (La
 
 ## Build, test, install
 
-Needs JDK 21 and the Android SDK (platform `android-37.0`, build tools 36.0.0; Gradle downloads missing SDK parts
+Needs JDK 17 or later (21 is what CI uses) and the Android SDK (platform `android-37.0`, build tools 36.0.0; Gradle downloads missing SDK parts
 when the licences are accepted). Point Gradle at the SDK with `ANDROID_HOME` or a `local.properties` file
 (`sdk.dir=/path/to/android-sdk`, not committed). Node.js is only needed for the differential corpus.
 
@@ -92,7 +92,7 @@ A conversion rule changes in `spec/` first, then in every port (see `CLAUDE.md`)
 | Android Gradle plugin (built-in Kotlin) | 9.4.1 |
 | Kotlin | 2.4.21 |
 | Compose BOM | 2026.09.00 (Compose 1.12, Material 3 1.4) |
-| JDK | 21 (Java/Kotlin target 21) |
+| JDK | 21 in CI; Java/Kotlin target 17, so any JDK from 17 on builds and tests it |
 | compileSdk / targetSdk / minSdk | 37 / 37 / 24 |
 
 Versions live in `gradle/libs.versions.toml`. `gradle.properties` keeps the build modest (4 workers, 2 GB for the
