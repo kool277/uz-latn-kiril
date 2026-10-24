@@ -128,6 +128,19 @@ describe('details that matter', () => {
     expect(zout.text(zout.get(sheet)!)).toBe(zin.text(zin.get(sheet)!));
   });
 
+  it('a large document (tens of thousands of runs, several engine batches) converts completely', () => {
+    const zip = ZipArchive.read(docx);
+    const e = zip.get('word/document.xml')!;
+    const xml = zip.text(e);
+    const body = xml.slice(xml.indexOf('<w:body>') + 8, xml.indexOf('<w:sectPr'));
+    zip.replace(e, new TextEncoder().encode(xml.replace(body, body.repeat(3000))));
+    const r = convertDocument(U, { name: 'big.docx', bytes: zip.write(), from: 'auto', to: 'lat', options: {} });
+    expect(r.stats.segments).toBeGreaterThan(30000);
+    const out = part(r.bytes, 'word/document.xml');
+    expect(out.split('<w:rPr><w:b/></w:rPr><w:t>SHAH</w:t>').length - 1).toBe(3000);
+    expect(/[Ѐ-ӿ]/.test(out)).toBe(false);
+  });
+
   it('the same script in and out leaves the file byte-identical', () => {
     const r = convertDocument(U, { name: 'a.docx', bytes: docx, from: 'auto', to: 'cyr', options: {} });
     expect(r.warnings).toContain('warn.sameScript');

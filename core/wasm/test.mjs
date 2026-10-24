@@ -96,6 +96,26 @@ function randomSuite(U, label) {
   return diffFail + segFail;
 }
 
+// many segments and long texts: the input, output and boundary buffers (and wasm memory) must grow on the way
+function largeSuite(U, label) {
+  let pass = 0, fail = 0;
+  const words = ['Тошкент ', 'шаҳри ', 'ОБЪЕКТ', ' ва ', 'кўча', '. ', 'Исҳоқ'];
+  for (const n of [1000, 50000, 400000]) {
+    const pieces = Array.from({ length: n }, (_, i) => words[i % words.length]);
+    const want = ref.convert(pieces.join(''), 'cyr', 'lat');
+    const got = U.convertSegments(pieces, 'cyr', 'lat');
+    if (got.pieces.length === n && got.pieces.join('') === want) pass++;
+    else { fail++; console.log(`LARGE ${label}: ${n} segments do not match`); }
+  }
+  const long = 'Ўзбекистон Республикаси, Тошкент шаҳри. '.repeat(200000);
+  if (U.convert(long, 'cyr', 'new') === ref.convert(long, 'cyr', 'new')) pass++;
+  else { fail++; console.log(`LARGE ${label}: ${long.length} code units do not match`); }
+  if (U.convert('Шаҳар', 'cyr', 'lat') === 'Shahar') pass++; // small again after growing
+  else { fail++; console.log(`LARGE ${label}: small input after large ones`); }
+  console.log(`${pass} passed, ${fail} failed (${label}: large inputs, growing buffers)`);
+  return fail;
+}
+
 const engines = [
   ['uztranslit.wasm', await instantiate(readFileSync(new URL('./build/uztranslit.wasm', import.meta.url)))],
   ['uztranslit.engine.js', fromExports(await import('./build/uztranslit.engine.js'))]
@@ -103,4 +123,5 @@ const engines = [
 let failures = 0;
 for (const [label, U] of engines) failures += fixtureSuite(U, label);
 for (const [label, U] of engines) failures += randomSuite(U, label);
+for (const [label, U] of engines) failures += largeSuite(U, label);
 process.exit(failures ? 1 : 0);

@@ -72,8 +72,7 @@ export class UzTranslitWasm {
 
   // copies the pieces into wasm memory; returns false if a lone surrogate may be present
   #write(pieces, total) {
-    const ptr = this.#x.inputBuffer(total);
-    const view = new Uint16Array(this.#x.memory.buffer, ptr, total);
+    const view = this.#view(Uint16Array, this.#x.inputBuffer(total), total);
     let k = 0, ok = true;
     for (const s of pieces) {
       if (ok && !wellFormed(s)) ok = false;
@@ -82,8 +81,13 @@ export class UzTranslitWasm {
     return ok;
   }
 
+  // Every view is made *after* the call that may grow wasm memory: growing detaches the old buffer.
+  #view(Type, ptr, len) {
+    return new Type(this.#x.memory.buffer, ptr, len);
+  }
+
   #read(len, safe) {
-    const view = new Uint16Array(this.#x.memory.buffer, this.#x.outputPtr(), len);
+    const view = this.#view(Uint16Array, this.#x.outputPtr(), len);
     if (safe) return this.#decoder.decode(view);
     // TextDecoder would turn lone surrogates into U+FFFD; user text must survive unchanged
     let s = '';
@@ -99,7 +103,7 @@ export class UzTranslitWasm {
     const safe = this.#write(pieces, total);
     const k = pieces.length - 1;
     if (k > 0) {
-      const b = new Int32Array(this.#x.memory.buffer, this.#x.boundaryBuffer(k), k);
+      const b = this.#view(Int32Array, this.#x.boundaryBuffer(k), k);
       let pos = 0;
       for (let i = 0; i < k; i++) b[i] = pos += pieces[i].length;
     }
@@ -107,7 +111,7 @@ export class UzTranslitWasm {
     const text = this.#read(len, safe);
     const resolved = SCRIPTS[this.#x.resolvedSource()];
     let splits = null;
-    if (k > 0) splits = Int32Array.from(new Int32Array(this.#x.memory.buffer, this.#x.boundaryBuffer(k), k));
+    if (k > 0) splits = Int32Array.from(this.#view(Int32Array, this.#x.boundaryBuffer(k), k));
     return { text, splits, from: resolved };
   }
 
