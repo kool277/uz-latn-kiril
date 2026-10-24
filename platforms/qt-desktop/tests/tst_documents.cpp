@@ -261,6 +261,7 @@ private slots:
         QVERIFY(writeAll(src + QStringLiteral("/ichki/c.csv"), QStringLiteral("shahar,2026\n").toUtf8()));
         QVERIFY(writeAll(src + QStringLiteral("/d.png"), QByteArray("\x89PNG", 4)));         // not a batch type
         QVERIFY(writeAll(src + QStringLiteral("/.hidden.txt"), QByteArray("shahar")));     // hidden
+        QVERIFY(writeAll(src + QStringLiteral("/.git/config.txt"), QByteArray("shahar"))); // inside a dot folder
         QVERIFY(writeAll(src + QStringLiteral("/bad.txt"), QByteArray("\xC0\xC1")));       // not UTF-8
         QVERIFY(writeAll(src + QStringLiteral("/e.json"), QByteArray("{\"k\": \"Ozbek\"}")));
 

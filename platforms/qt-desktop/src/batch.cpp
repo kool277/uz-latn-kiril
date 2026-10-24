@@ -56,6 +56,10 @@ QList<BatchItem> Batch::collectFolder(const QString &sourceDir, const QString &o
         if (isInside(absolute, out)) // the output folder inside the source folder: never convert our own output
             continue;
         const QString rel = base.relativeFilePath(path);
+        // dot files and dot folders (.git, .vscode ...) are hidden by convention; on Windows the iterator does not
+        // treat them as hidden, so they are left out here on every system
+        if (rel.startsWith(u'.') || rel.contains(QStringLiteral("/.")))
+            continue;
         items.push_back({absolute, QDir::cleanPath(out + u'/' + rel), rel});
     }
     std::sort(items.begin(), items.end(), [](const BatchItem &a, const BatchItem &b) { return a.display < b.display; });
