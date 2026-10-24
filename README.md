@@ -13,9 +13,10 @@ All six directions, with the rules that matter: е/э, ц → s/ts, ъ/ь, йў 
 | JavaScript core (browser/Node, UMD) | `core/js/uztranslit.js` | 212/212 ✔ |
 | Python core + CLI | `core/python/uztranslit.py` | 212/212 ✔ |
 | WebAssembly core (AssemblyScript) + the same engine as plain JS (wasm2js) | `core/wasm/` | 212/212 ✔ both builds; identical to the JS core on 40,000 random conversions per build in CI (1.2M checked once) |
-| Web app for **https://latin.jaybi.uz** — Angular 22, WebAssembly on every CPU core, text **and documents**, PWA/offline | `web/` | 212/212 ✔ both engines · 499 engine tests · 10 Playwright tests |
+| Web app for **https://latin.jaybi.uz** — Angular 22, WebAssembly on every CPU core, text **and documents**, PWA/offline | `web/` | 212/212 ✔ both engines · 499 engine tests · 16 Playwright tests |
 | MS Office macro module (Word/Excel/PowerPoint 97 → 2026, VBA 5–7) | `office-vba/UzTranslit.bas` | engine executed in LibreOffice Basic VBA mode: 210/210 ✔, 3,500 differential ✔; document macros compiled + linted (Office itself not in CI) |
 | Office ribbon tab (2007+): `UzTranslitRibbon.bas` + `office-vba/ribbon/`, put into a .dotm/.xlam/.ppam by `tools/add_ribbon.py` | `office-vba/ribbon/` | injection tested on Word/Excel/PowerPoint files; `UzSelfTest` 29/29 in CI |
+| Office add-in (Office.js) for Word, Excel, PowerPoint on the web, Mac, iPad and Microsoft 365, served at latin.jaybi.uz/office | `platforms/office-addin/` | manifests valid (Microsoft validator); logic tested against fake hosts + the 20,000-case corpus; task pane tested in Chromium |
 | LibreOffice extension (menu Tools ▸ UzTranslit) | `libreoffice/uztranslit-libreoffice.oxt` | installed + e2e-tested in Writer/Calc/Impress ✔ |
 | LibreOffice Basic module / Python edition | `libreoffice/UzTranslitLO.bas`, `uztranslit-libreoffice-python.oxt` | ✔ / needs Python provider |
 | Android 7+ — Kotlin core + Compose app: live converter, *Process text* menu on selected text, share sheet, .txt files, Quick Settings tile | `platforms/android/` | Kotlin core 212/212 ✔, 20,000 differential ✔, 264 JVM tests; debug APK built in CI |

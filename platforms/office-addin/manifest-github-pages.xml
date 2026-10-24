@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- generated from manifest.template.xml by build.mjs: do not edit -->
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+           xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
+           xsi:type="TaskPaneApp">
+  <Id>c7a6737a-9d10-4aeb-b415-530240e81870</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>UzTranslit</ProviderName>
+  <DefaultLocale>uz-Latn-UZ</DefaultLocale>
+  <DisplayName DefaultValue="UzTranslit">
+    <Override Locale="ru-RU" Value="UzTranslit"/>
+    <Override Locale="en-US" Value="UzTranslit"/>
+  </DisplayName>
+  <Description DefaultValue="Oʻzbek matni: Kirill ⇄ Lotin 1995 ⇄ Yangi lotin (Ö Ğ Ş Ç). Formatlash saqlanadi.">
+    <Override Locale="ru-RU" Value="Узбекский текст: кириллица ⇄ латиница 1995 ⇄ новая латиница. Форматирование сохраняется."/>
+    <Override Locale="en-US" Value="Uzbek text: Cyrillic ⇄ Latin 1995 ⇄ new Latin (Ö Ğ Ş Ç). Formatting is kept."/>
+  </Description>
+  <IconUrl DefaultValue="https://kool277.github.io/uz-latn-kiril/office/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://kool277.github.io/uz-latn-kiril/office/icon-64.png"/>
+  <SupportUrl DefaultValue="https://github.com/kool277/uz-latn-kiril"/>
+  <AppDomains>
+    <AppDomain>https://kool277.github.io</AppDomain>
+  </AppDomains>
+  <Hosts>
+    <Host Name="Document"/>
+    <Host Name="Workbook"/>
+    <Host Name="Presentation"/>
+  </Hosts>
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://kool277.github.io/uz-latn-kiril/office/taskpane.html"/>
+  </DefaultSettings>
+  <Permissions>ReadWriteDocument</Permissions>
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Hosts>
+      <Host xsi:type="Document">
+        <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="GetStarted.Title"/>
+            <Description resid="GetStarted.Description"/>
+            <LearnMoreUrl resid="LearnMore.Url"/>
+          </GetStarted>
+          <FunctionFile resid="Commands.Url"/>
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <OfficeTab id="TabHome">
+              <Group id="UzTranslit.Group">
+                <Label resid="Group.Label"/>
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16"/>
+                  <bt:Image size="32" resid="Icon.32"/>
+                  <bt:Image size="80" resid="Icon.80"/>
+                </Icon>
+                <Control xsi:type="Button" id="UzTranslit.Open">
+                  <Label resid="Button.Label"/>
+                  <Supertip>
+                    <Title resid="Button.Label"/>
+                    <Description resid="Button.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16"/>
+                    <bt:Image size="32" resid="Icon.32"/>
+                    <bt:Image size="80" resid="Icon.80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>UzTranslit.Taskpane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+      <Host xsi:type="Workbook">
+        <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="GetStarted.Title"/>
+            <Description resid="GetStarted.Description"/>
+            <LearnMoreUrl resid="LearnMore.Url"/>
+          </GetStarted>
+          <FunctionFile resid="Commands.Url"/>
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <OfficeTab id="TabHome">
+              <Group id="UzTranslit.Group">
+                <Label resid="Group.Label"/>
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16"/>
+                  <bt:Image size="32" resid="Icon.32"/>
+                  <bt:Image size="80" resid="Icon.80"/>
+                </Icon>
+                <Control xsi:type="Button" id="UzTranslit.Open">
+                  <Label resid="Button.Label"/>
+                  <Supertip>
+                    <Title resid="Button.Label"/>
+                    <Description resid="Button.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16"/>
+                    <bt:Image size="32" resid="Icon.32"/>
+                    <bt:Image size="80" resid="Icon.80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>UzTranslit.Taskpane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+      <Host xsi:type="Presentation">
+        <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="GetStarted.Title"/>
+            <Description resid="GetStarted.Description"/>
+            <LearnMoreUrl resid="LearnMore.Url"/>
+          </GetStarted>
+          <FunctionFile resid="Commands.Url"/>
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <OfficeTab id="TabHome">
+              <Group id="UzTranslit.Group">
+                <Label resid="Group.Label"/>
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16"/>
+                  <bt:Image size="32" resid="Icon.32"/>
+                  <bt:Image size="80" resid="Icon.80"/>
+                </Icon>
+                <Control xsi:type="Button" id="UzTranslit.Open">
+                  <Label resid="Button.Label"/>
+                  <Supertip>
+                    <Title resid="Button.Label"/>
+                    <Description resid="Button.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16"/>
+                    <bt:Image size="32" resid="Icon.32"/>
+                    <bt:Image size="80" resid="Icon.80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>UzTranslit.Taskpane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+    <Resources>
+      <bt:Images>
+        <bt:Image id="Icon.16" DefaultValue="https://kool277.github.io/uz-latn-kiril/office/icon-16.png"/>
+        <bt:Image id="Icon.32" DefaultValue="https://kool277.github.io/uz-latn-kiril/office/icon-32.png"/>
+        <bt:Image id="Icon.80" DefaultValue="https://kool277.github.io/uz-latn-kiril/office/icon-80.png"/>
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="Commands.Url" DefaultValue="https://kool277.github.io/uz-latn-kiril/office/commands.html"/>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://kool277.github.io/uz-latn-kiril/office/taskpane.html"/>
+        <bt:Url id="LearnMore.Url" DefaultValue="https://github.com/kool277/uz-latn-kiril/tree/main/platforms/office-addin"/>
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="Group.Label" DefaultValue="UzTranslit">
+          <bt:Override Locale="ru-RU" Value="UzTranslit"/>
+        </bt:String>
+        <bt:String id="Button.Label" DefaultValue="Alifbo">
+          <bt:Override Locale="ru-RU" Value="Алфавит"/>
+          <bt:Override Locale="en-US" Value="Alphabet"/>
+        </bt:String>
+        <bt:String id="GetStarted.Title" DefaultValue="UzTranslit tayyor">
+          <bt:Override Locale="ru-RU" Value="UzTranslit готов"/>
+          <bt:Override Locale="en-US" Value="UzTranslit is ready"/>
+        </bt:String>
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="Button.Tooltip" DefaultValue="Kirill ⇄ Lotin 1995 ⇄ Yangi lotin: belgilangan matn yoki butun hujjat.">
+          <bt:Override Locale="ru-RU" Value="Кириллица ⇄ латиница 1995 ⇄ новая латиница: выделение или весь документ."/>
+          <bt:Override Locale="en-US" Value="Cyrillic ⇄ Latin 1995 ⇄ new Latin: the selection or the whole document."/>
+        </bt:String>
+        <bt:String id="GetStarted.Description" DefaultValue="Bosh sahifa (Home) ▸ Alifbo tugmasini bosing.">
+          <bt:Override Locale="ru-RU" Value="Нажмите кнопку «Алфавит» на вкладке «Главная»."/>
+          <bt:Override Locale="en-US" Value="Click Alphabet on the Home tab."/>
+        </bt:String>
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
+</OfficeApp>

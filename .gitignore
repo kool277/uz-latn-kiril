@@ -41,3 +41,4 @@ web/src/generated/
 web/test/generated/
 web/public/wasm/
 web/public/downloads/
+web/public/office/

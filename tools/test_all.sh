@@ -12,6 +12,9 @@ echo "== Office ribbon (tools/add_ribbon.py)"
 python3 "$ROOT/tools/test_add_ribbon.py" > "$ROOT/build/ribbon-test.log" 2>&1 || fail=1
 grep -v "^  ok" "$ROOT/build/ribbon-test.log"
 echo "== Differential corpus"; node "$ROOT/tools/make_differential.mjs" || fail=1
+echo "== Office add-in (manifests, logic against fake hosts)"
+node "$ROOT/platforms/office-addin/build.mjs" --check || fail=1
+node "$ROOT/platforms/office-addin/test/run.mjs" || fail=1
 echo "== JS core";      node "$ROOT/core/js/test.js" || fail=1
 echo "== Python core";  python3 "$ROOT/core/python/test_uztranslit.py" || fail=1
 echo "== WebAssembly core"

@@ -7,6 +7,7 @@ DejaVu fonts.
       -> office-vba/ribbon/images/<name>.png                  32 px (the ribbon scales it to 16 px for small buttons)
       -> libreoffice/extension/icons/<name>_16.png, _26.png    LibreOffice small / large toolbar icons
       -> libreoffice/extension/icons/<name>.svg
+      -> platforms/office-addin/assets/icon-<size>.png        the Office add-in (16, 32, 64, 80, 128 px)
 """
 import os
 
@@ -57,6 +58,11 @@ def main():
         for size in (16, 26):
             png(glyph, font, rel, size, os.path.join(lo, "%s_%d.png" % (name, size)))
         svg(glyph, rel, os.path.join(lo, name + ".svg"))
+    addin = os.path.join(ROOT, "platforms", "office-addin", "assets")
+    os.makedirs(addin, exist_ok=True)
+    glyph, font, rel = ICONS["to_new"]
+    for size in (16, 32, 64, 80, 128):
+        png(glyph, font, rel, size, os.path.join(addin, "icon-%d.png" % size))
     print("icons:", ", ".join(ICONS), "->", os.path.relpath(ribbon, ROOT), "and", os.path.relpath(lo, ROOT))
 
 

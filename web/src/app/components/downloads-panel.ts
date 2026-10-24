@@ -3,7 +3,7 @@ import { I18nService } from '../services/i18n.service';
 
 export const REPO_URL = 'https://github.com/kool277/uz-latn-kiril';
 
-/** "Yuklab olish / Downloads": the Office and LibreOffice add-ins, served from this site. */
+/** "Yuklab olish / Downloads": the Office macros, ribbon and add-in manifest and the LibreOffice extensions, served from this site. */
 @Component({
   selector: 'app-downloads-panel',
   template: `
@@ -34,6 +34,8 @@ export class DownloadsPanel {
   protected readonly repo = REPO_URL;
   protected readonly items = [
     { file: 'UzTranslit.bas', label: 'dl.office', hint: 'dl.officeHint' },
+    { file: 'UzTranslitRibbon.bas', label: 'dl.ribbon', hint: 'dl.ribbonHint' },
+    { file: 'uztranslit-office-addin.xml', label: 'dl.addin', hint: 'dl.addinHint' },
     { file: 'uztranslit-libreoffice.oxt', label: 'dl.lo', hint: 'dl.loHint' },
     { file: 'uztranslit-libreoffice-python.oxt', label: 'dl.loPython', hint: 'dl.loPythonHint' }
   ];

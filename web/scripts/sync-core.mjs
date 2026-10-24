@@ -2,7 +2,8 @@
 /* Copies what the web app ships or tests against from the rest of the repository (never edit the copies):
  *   core/wasm build    → public/wasm/uztranslit.<hash>.wasm, src/generated/uztranslit-{wasm,engine}.js (+ .d.ts)
  *   spec/fixtures.json → test/generated/fixtures.json (read by the web fixture runner)
- *   office-vba/UzTranslit.bas, libreoffice/*.oxt → public/downloads/
+ *   office-vba/*.bas, libreoffice/*.oxt  → public/downloads/
+ *   platforms/office-addin (task pane)   → public/office/ (the Office add-in is served from /office/)
  * core/wasm is (re)built first when its output is missing or older than its sources. */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -52,7 +53,12 @@ copyFileSync(join(root, 'spec', 'fixtures.json'), join(testGenerated, 'fixtures.
 
 const downloads = join(web, 'public', 'downloads');
 fresh(downloads);
-copyFileSync(join(root, 'office-vba', 'UzTranslit.bas'), join(downloads, 'UzTranslit.bas'));
+for (const f of ['UzTranslit.bas', 'UzTranslitRibbon.bas']) copyFileSync(join(root, 'office-vba', f), join(downloads, f));
 for (const f of readdirSync(join(root, 'libreoffice')).filter(f => f.endsWith('.oxt'))) copyFileSync(join(root, 'libreoffice', f), join(downloads, f));
 
-console.log(`sync-core: engine ${hash}, fixtures, ${readdirSync(downloads).length} downloads`);
+execFileSync(process.execPath, [join(root, 'platforms', 'office-addin', 'build.mjs'), '--stage', join(web, 'public', 'office')], { stdio: 'ignore' });
+for (const f of ['manifest.xml', 'manifest-github-pages.xml']) {
+  copyFileSync(join(root, 'platforms', 'office-addin', f), join(downloads, f === 'manifest.xml' ? 'uztranslit-office-addin.xml' : 'uztranslit-office-addin-github-pages.xml'));
+}
+
+console.log(`sync-core: engine ${hash}, fixtures, ${readdirSync(downloads).length} downloads, office add-in`);
