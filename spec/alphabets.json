@@ -1,0 +1,81 @@
+{
+  "$schema": "./alphabets.schema.json",
+  "version": "1.0.0",
+  "updated": "2026-10-24",
+  "legal_basis": {
+    "latin_1995": "Law of 1993-09-02 as amended 1995-05-06 (26 letters + 3 digraphs sh, ch, ng + tutuq belgisi)",
+    "latin_2026": "Law O'RQ-1184 of 2026-10-21 amending the 1993 law: 28 letters + 1 tutuq belgisi; in force 6 months after official publication (~late April 2027)",
+    "cyrillic": "Uzbek Cyrillic alphabet of 1940 (35 letters), still in parallel official use"
+  },
+  "scripts": {
+    "cyr": {
+      "name": "Oʻzbek kirill / Ўзбек кирилл",
+      "letters": "А Б В Г Д Е Ё Ж З И Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Ъ Ь Э Ю Я Ў Қ Ғ Ҳ",
+      "extra_in_loanwords": "Щ Ы",
+      "vowels": "а е ё и о у э ю я ў ы",
+      "codepoints_of_non_russian_letters": { "Ў": "U+040E", "ў": "U+045E", "Қ": "U+049A", "қ": "U+049B", "Ғ": "U+0492", "ғ": "U+0493", "Ҳ": "U+04B2", "ҳ": "U+04B3", "Ё": "U+0401", "ё": "U+0451" }
+    },
+    "lat": {
+      "name": "Oʻzbek lotin (1995)",
+      "letters": "A B D E F G H I J K L M N O P Q R S T U V X Y Z Oʻ Gʻ Sh Ch Ng",
+      "sign": "ʼ (tutuq belgisi)",
+      "vowels": "a e i o u oʻ",
+      "apostrophe_standard": { "okina_for_oʻ_gʻ": "U+02BB ʻ", "tutuq_belgisi": "U+02BC ʼ" },
+      "apostrophe_variants_accepted_on_input": ["U+0027 '", "U+02BB ʻ", "U+02BC ʼ", "U+2018 ‘", "U+2019 ’", "U+0060 `", "U+00B4 ´"]
+    },
+    "new": {
+      "name": "Oʻzbek lotin (2026, OʻRQ-1184)",
+      "letters": "A B Ç D E F G Ğ H I J K L M N O Ö P Q R S Ş T U V X Y Z",
+      "sign": "ʼ (tutuq belgisi, U+02BC)",
+      "vowels": "a e i o ö u",
+      "changes_from_1995": { "Oʻ oʻ": "Ö ö (U+00D6 / U+00F6)", "Gʻ gʻ": "Ğ ğ (U+011E / U+011F)", "Sh sh": "Ş ş (U+015E / U+015F)", "Ch ch": "Ç ç (U+00C7 / U+00E7)", "Ng ng": "no longer a separate letter; spelled n+g as before" },
+      "legacy_draft_variants_accepted_on_input": { "Ō ō (2021 draft)": "treated as Ö ö", "Õ õ (2019 draft)": "treated as Ö ö" }
+    }
+  },
+  "cyr_to_lat": {
+    "simple": {
+      "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "ж": "j", "з": "z", "и": "i", "й": "y", "к": "k", "л": "l", "м": "m", "н": "n", "о": "o", "п": "p", "р": "r", "с": "s", "т": "t", "у": "u", "ф": "f", "х": "x", "қ": "q", "ҳ": "h", "э": "e", "ы": "i",
+      "ё": "yo", "ю": "yu", "я": "ya"
+    },
+    "target_dependent": {
+      "ш": { "lat": "sh", "new": "ş" },
+      "ч": { "lat": "ch", "new": "ç" },
+      "щ": { "lat": "sh", "new": "ş" },
+      "ў": { "lat": "oʻ", "new": "ö" },
+      "ғ": { "lat": "gʻ", "new": "ğ" }
+    },
+    "contextual": {
+      "е": "'ye' at word start, after a vowel, after ъ or ь; otherwise 'e'",
+      "ц": "'ts' after a vowel; 's' at word start or after a consonant",
+      "ъ": "dropped before е ё ю я (the iotated vowel supplies the y); dropped after ў when target is Latin (мўъжиза → moʻjiza); otherwise ʼ (U+02BC)",
+      "ь": "always dropped (before е ё ю я the vowel supplies the y: компьютер → kompyuter)",
+      "с+ҳ": "target lat: 'sʼh' (Исҳоқ → Isʼhoq) to prevent reading as 'sh'; target new: plain 'sh' (Ş exists, so s+h is unambiguous)"
+    }
+  },
+  "lat_to_cyr": {
+    "simple": {
+      "a": "а", "b": "б", "d": "д", "f": "ф", "g": "г", "h": "ҳ", "i": "и", "j": "ж", "k": "к", "l": "л", "m": "м", "n": "н", "o": "о", "p": "п", "q": "қ", "r": "р", "s": "с", "t": "т", "u": "у", "v": "в", "x": "х", "y": "й", "z": "з",
+      "c": "ц", "w": "в",
+      "ö": "ў", "ō": "ў", "õ": "ў", "ğ": "ғ", "ş": "ш", "ç": "ч"
+    },
+    "digraphs": {
+      "o+apostrophe": "ў", "g+apostrophe": "ғ",
+      "sh": "ш (source lat only; source new: с+ҳ)", "ch": "ч", "sʼh": "сҳ (apostrophe dropped)",
+      "ye": "е at word start / after vowel / after apostrophe; after a consonant: ье (dictionary overrides give ъе: obyekt → объект)",
+      "yo": "ё (but y + oʻ → йў: yoʻl → йўл)", "yu": "ю", "ya": "я",
+      "e": "э at word start or after a vowel; е after a consonant",
+      "tsiya": "ция", "tsion": "цион", "ts (word-final, after vowel)": "ц",
+      "apostrophe between letters": "ъ (tutuq belgisi); word-final U+02BC → ъ; other stray apostrophes/quotes are left untouched"
+    }
+  },
+  "lat_to_new": {
+    "sh": "ş", "ch": "ç", "o+apostrophe": "ö", "g+apostrophe": "ğ", "sʼh": "sh (separator no longer needed)", "tutuq": "normalised to U+02BC", "ng": "unchanged"
+  },
+  "new_to_lat": {
+    "ş": "sh", "ç": "ch", "ö": "oʻ", "ğ": "gʻ", "sh (s+h in new text)": "sʼh", "ō/õ (legacy drafts)": "oʻ"
+  },
+  "casing": {
+    "rule": "When a single source letter expands to several output letters (Ш→Sh, Ё→Yo, Ц→Ts, Е→Ye, Ş→Sh), use ALL CAPS if the source letter is uppercase AND its next letter is uppercase (or, with no next letter, its previous letter is uppercase); use Title case if only the source letter is uppercase; otherwise lowercase. Single-letter outputs simply copy the case of the source letter.",
+    "examples": { "ШАҲАР": "SHAHAR", "Шаҳар": "Shahar", "ТАЙЁР": "TAYYOR", "Ё": "Yo", "ЕР": "YER", "Ер": "Yer", "ŞAHAR": "SHAHAR", "Şahar": "Shahar" }
+  }
+}

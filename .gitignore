@@ -1,0 +1,37 @@
+# build output (also holds the throwaway LibreOffice test profile)
+build/
+dist/
+coverage/
+
+# node / Angular / Playwright
+node_modules/
+.angular/
+test-results/
+playwright-report/
+*.tsbuildinfo
+
+# python
+__pycache__/
+*.pyc
+.venv/
+
+# gradle / Android
+.gradle/
+local.properties
+*.iml
+.idea/
+captures/
+
+# xcode / Swift
+DerivedData/
+xcuserdata/
+*.xcuserstate
+.build/
+.swiftpm/
+
+# editors / OS
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+.env
+.env.*

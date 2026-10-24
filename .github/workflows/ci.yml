@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  conformance:
+    name: Conformance (JS, Python, LibreOffice Basic)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Install LibreOffice (headless Basic test runner)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libreoffice-core libreoffice-writer libreoffice-calc python3-uno
+      - name: Run every suite
+        run: tools/test_all.sh
