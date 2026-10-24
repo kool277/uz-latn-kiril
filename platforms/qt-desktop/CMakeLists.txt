@@ -143,10 +143,13 @@ if(UZT_BUILD_TESTS)
             FILES "${UZT_TESTDATA}/spec/fixtures.json")
     endfunction()
 
+    # every QtTest report also goes to Testing/Temporary/<test>.txt: on Windows the console output of a test
+    # started by ctest can be lost, and CI uploads that folder when a test fails
+    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/Testing/Temporary")
     qt_add_executable(tst_fixtures tests/tst_fixtures.cpp)
     target_link_libraries(tst_fixtures PRIVATE uztranslit_core Qt6::Test uztranslit_warnings)
     uzt_add_fixtures_resource(tst_fixtures)
-    add_test(NAME tst_fixtures COMMAND tst_fixtures)
+    add_test(NAME tst_fixtures COMMAND tst_fixtures -o "${CMAKE_BINARY_DIR}/Testing/Temporary/tst_fixtures.txt,txt" -o -,txt)
 
     # build/differential.json: `node tools/make_differential.mjs` at the repository root (CI runs it before CMake).
     set(UZT_DIFFERENTIAL "${UZT_REPO_ROOT}/build/differential.json")
@@ -163,12 +166,12 @@ if(UZT_BUILD_TESTS)
         message(STATUS "build/differential.json not found: tst_differential will be skipped "
                        "(run `node tools/make_differential.mjs` at the repository root, then configure again)")
     endif()
-    add_test(NAME tst_differential COMMAND tst_differential)
+    add_test(NAME tst_differential COMMAND tst_differential -o "${CMAKE_BINARY_DIR}/Testing/Temporary/tst_differential.txt,txt" -o -,txt)
     set_tests_properties(tst_differential PROPERTIES SKIP_REGULAR_EXPRESSION "SKIP   : ")
 
     qt_add_executable(tst_documents tests/tst_documents.cpp)
     target_link_libraries(tst_documents PRIVATE uztranslit_files Qt6::Test uztranslit_warnings)
-    add_test(NAME tst_documents COMMAND tst_documents)
+    add_test(NAME tst_documents COMMAND tst_documents -o "${CMAKE_BINARY_DIR}/Testing/Temporary/tst_documents.txt,txt" -o -,txt)
 
     # the real binary in command-line mode, without a display
     qt_add_executable(tst_cli tests/tst_cli.cpp)
@@ -176,18 +179,18 @@ if(UZT_BUILD_TESTS)
     target_compile_definitions(tst_cli PRIVATE UZT_APP="$<TARGET_FILE:uztranslit>")
     uzt_add_fixtures_resource(tst_cli)
     add_dependencies(tst_cli uztranslit)
-    add_test(NAME tst_cli COMMAND tst_cli)
+    add_test(NAME tst_cli COMMAND tst_cli -o "${CMAKE_BINARY_DIR}/Testing/Temporary/tst_cli.txt,txt" -o -,txt)
 
     qt_add_executable(tst_gui tests/tst_gui.cpp)
     target_link_libraries(tst_gui PRIVATE uztranslit_gui Qt6::Test uztranslit_warnings)
     uzt_add_app_resources(tst_gui)
-    add_test(NAME tst_gui COMMAND tst_gui)
+    add_test(NAME tst_gui COMMAND tst_gui -o "${CMAKE_BINARY_DIR}/Testing/Temporary/tst_gui.txt,txt" -o -,txt)
     set_tests_properties(tst_gui PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
     qt_add_executable(tst_translations tests/tst_translations.cpp)
     target_link_libraries(tst_translations PRIVATE Qt6::Core Qt6::Test uztranslit_warnings)
     target_compile_definitions(tst_translations PRIVATE UZT_TS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/translations")
-    add_test(NAME tst_translations COMMAND tst_translations)
+    add_test(NAME tst_translations COMMAND tst_translations -o "${CMAKE_BINARY_DIR}/Testing/Temporary/tst_translations.txt,txt" -o -,txt)
 
     # the real binary in GUI mode: starts, opens a file, converts, quits (offscreen)
     configure_file(tests/smoke.txt "${UZT_TESTDATA}/smoke.txt" COPYONLY)
