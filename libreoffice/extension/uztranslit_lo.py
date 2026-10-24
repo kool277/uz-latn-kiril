@@ -415,7 +415,11 @@ def detect(text):
     return "lat"
 
 
-_SKIP_RE = re.compile(r"(https?://|www\.)\S+|\S+@\S+\.\S+|@\w+")
+# SPEC §5.6 is the JavaScript expression /(https?:\/\/|www\.)\S+|\S+@\S+\.\S+|@\w+/g with JavaScript's classes:
+# \s is this fixed set and \w is ASCII only (Python's \s and \w would also take Cyrillic letters, ʻ, U+0085 …).
+_JS_SPACE = "\t\n\x0b\x0c\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff"
+_NS = "[^" + _JS_SPACE + "]"
+_SKIP_RE = re.compile("(?:https?://|www\\.)%s+|%s+@%s+\\.%s+|@[A-Za-z0-9_]+" % (_NS, _NS, _NS, _NS))
 
 
 def _with_skips(text, fn):

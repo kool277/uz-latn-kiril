@@ -35,4 +35,29 @@ for o in FX["optional"]:
     check("optional/" + o["feature"], U.convert(o["in"], o["from"], o["to"], options), o["out"])
 
 print("%d passed, %d failed (uztranslit.py v%s)" % (passed, failed, U.VERSION))
-sys.exit(1 if failed else 0)
+
+# differential corpus (node tools/make_differential.mjs): the reference JS core's output on random text
+DIFF = os.path.join(HERE, "..", "..", "build", "differential.json")
+dfail = 0
+if os.path.exists(DIFF):
+    with open(DIFF, encoding="utf-8") as f:
+        D = json.load(f)
+    dpass = 0
+    for c in D["cases"]:
+        got = U.convert(c["in"], c["from"], c["to"], c["options"])
+        if got == c["out"]:
+            dpass += 1
+        else:
+            dfail += 1
+            if dfail <= 10:
+                print("DIFF %s->%s %r\n   in   %r\n   want %r\n   got  %r" % (c["from"], c["to"], c["options"], c["in"], c["out"], got))
+    for d in D["detect"]:
+        if U.detect(d["in"]) == d["expect"]:
+            dpass += 1
+        else:
+            dfail += 1
+            if dfail <= 10:
+                print("DIFF detect %r: want %s got %s" % (d["in"], d["expect"], U.detect(d["in"])))
+    print("%d passed, %d failed (differential vs %s)" % (dpass, dfail, D["reference"]))
+
+sys.exit(1 if failed or dfail else 0)

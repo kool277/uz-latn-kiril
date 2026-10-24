@@ -29,7 +29,7 @@ describe.skipIf(!hasSoffice)('converted files in LibreOffice', () => {
   // in.writer-docx.docx → export in.writer-docx.txt: every export gets its own name
   const stem = (p: string, f: string) => `${p}.${f.replace('.', '-')}`;
   const file = (p: string, f: string) => `${stem(p, f)}.${f.split('.').pop()}`;
-  const read = (f: string) => readFileSync(join(dir, f), 'utf8').replace(/^﻿/, '').replace(/[ \t]+$/gm, '').trimEnd();
+  const read = (f: string) => readFileSync(join(dir, f), 'utf8').replace(/^\ufeff/, '').replace(/[ \t]+$/gm, '').trimEnd();
 
   beforeAll(async () => {
     U = await wasmEngine();
