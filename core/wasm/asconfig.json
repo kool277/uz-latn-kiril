@@ -1,0 +1,21 @@
+{
+  "targets": {
+    "release": {
+      "outFile": "build/uztranslit.wasm",
+      "optimizeLevel": 3,
+      "shrinkLevel": 0,
+      "converge": true,
+      "noAssert": true
+    },
+    "debug": {
+      "outFile": "build/uztranslit.debug.wasm",
+      "textFile": "build/uztranslit.debug.wat",
+      "sourceMap": true,
+      "debug": true
+    }
+  },
+  "options": {
+    "runtime": "minimal",
+    "exportRuntime": false
+  }
+}

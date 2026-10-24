@@ -5,6 +5,10 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 fail=0
 echo "== JS core";      node "$ROOT/core/js/test.js" || fail=1
 echo "== Python core";  python3 "$ROOT/core/python/test_uztranslit.py" || fail=1
+echo "== WebAssembly core"
+( cd "$ROOT/core/wasm" &&
+  { [ -x node_modules/.bin/asc ] || npm ci --no-audit --no-fund --silent; } &&
+  npm run --silent build && node test.mjs ) || fail=1
 if command -v soffice >/dev/null 2>&1 && python3 -c "import uno" 2>/dev/null; then
   echo "== LibreOffice Basic (VBA engine)"
   python3 "$ROOT/tools/make_lo_basic.py" --test >/dev/null && rm -f "$ROOT/build/lo-test/result.txt"
