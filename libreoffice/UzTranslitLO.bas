@@ -2,15 +2,15 @@
 Option Explicit
 Option VBASupport 1
 ' =====================================================================================
-'  UzTranslit v1.0.0 — Oʻzbek alifbo konvertori for Microsoft Office 97 … 2026
+'  UzTranslit v1.0.0 -- O'zbek alifbo konvertori for Microsoft Office 97 ... 2026
 '  Word, Excel, PowerPoint (Windows and Mac). One module, no references, pure VBA 5/6/7.
 '
-'  Scripts:  "cyr"  Кирилл (1940)
-'            "lat"  Lotin 1995  (Oʻ Gʻ Sh Ch Ng)
-'            "new"  Lotin 2026  (Ö Ğ Ş Ç) — Qonun OʻRQ-1184, 21.10.2026
+'  Scripts:  "cyr"  Kirill / Cyrillic (1940)
+'            "lat"  Lotin 1995  (O' G' Sh Ch Ng)
+'            "new"  Lotin 2026  (O-umlaut, G-breve, S-cedilla, C-cedilla) -- Qonun O'RQ-1184, 21.10.2026
 '            "auto" detect
 '
-'  INSTALL:  Alt+F11 → File → Import File… → UzTranslit.bas → save the document / Normal.dotm /
+'  INSTALL:  Alt+F11 -> File -> Import File... -> UzTranslit.bas -> save the document / Normal.dotm /
 '            PERSONAL.XLSB.  Then Alt+F8 and run e.g. UzTranslit_LatToNew, or put the macros on a
 '            toolbar / Quick Access Toolbar / ribbon.  Excel formulas: =UzConvert(A1,"lat","new")
 '
@@ -19,9 +19,9 @@ Option VBASupport 1
 ' =====================================================================================
 
 ' ---------- options (defaults = spec defaults; False = default) ----------
-Public UzOptAscii As Boolean            ' True: use ' instead of ʻ / ʼ in Latin output
-Public UzOptKeepHardSignAfterO As Boolean ' True: мўъжиза → moʻʼjiza (default drops the ъ)
-Public UzOptNoTsFinal As Boolean        ' True: never turn word-final "ts" into ц
+Public UzOptAscii As Boolean            ' True: use ' instead of U+02BB / U+02BC in Latin output
+Public UzOptKeepHardSignAfterO As Boolean ' True: Cyrillic hard sign after short u stays (mu'jiza keeps the tutuq); default drops it
+Public UzOptNoTsFinal As Boolean        ' True: never turn word-final "ts" into Cyrillic tse
 Public UzOptNoDictionary As Boolean     ' True: skip the loanword dictionary
 
 ' ---------- internal tables ----------
@@ -31,12 +31,19 @@ Private mLatLower As String, mLatUpper As String
 Private mApos As String, mCyrVowels As String, mLatVowels As String
 Private mDictKey() As String, mDictVal() As String, mDictN As Long
 
-Private Const OKINA As Integer = &H2BB      ' ʻ
-Private Const TUTUQ As Integer = &H2BC      ' ʼ
+Private Const OKINA As Long = &H2BB      ' U+02BB okina
+Private Const TUTUQ As Long = &H2BC      ' U+02BC tutuq
 
 ' =====================================================================================
 '  PUBLIC API
 ' =====================================================================================
+' A UTF-16 code unit as 0..65535. VBA's AscW returns -32768..-1 for U+8000..U+FFFF (emoji halves, CJK, BOM),
+' LibreOffice Basic returns 32768..65535; both end up here as the same positive Long.
+Private Function CodeAt(ByVal s As String, ByVal i As Long) As Long
+    CodeAt = AscW(Mid$(s, i, 1))
+    If CodeAt < 0 Then CodeAt = CodeAt + 65536
+End Function
+
 Public Function UzConvert(ByVal Text As String, ByVal FromScript As String, ByVal ToScript As String) As String
     UzInit
     FromScript = LCase$(FromScript): ToScript = LCase$(ToScript)
@@ -75,21 +82,21 @@ Public Function UzNewToLat(ByVal Text As String) As String
 End Function
 
 Public Function UzDetect(ByVal Text As String) As String
-    Dim i As Long, n As Long, c As Integer, L As Integer, N2 As Integer
+    Dim i As Long, n As Long, c As Long, L As Long, N2 As Long
     Dim cyr As Long, lat As Long, nw As Long, dig As Long
     UzInit
     n = Len(Text)
     For i = 1 To n
-        c = AscW(Mid$(Text, i, 1))
+        c = CodeAt(Text, i)
         If IsCyr(c) Then
             cyr = cyr + 1
         ElseIf IsLat(c) Then
             lat = lat + 1
             L = LatLower(c)
             If L = &HF6 Or L = &H11F Or L = &H15F Or L = &HE7 Or L = &H14D Or L = &HF5 Then nw = nw + 1
-            N2 = 0: If i < n Then N2 = LatLower(AscW(Mid$(Text, i + 1, 1)))
+            N2 = 0: If i < n Then N2 = LatLower(CodeAt(Text, i + 1))
             If (L = 115 Or L = 99) And N2 = 104 Then dig = dig + 1          ' sh ch
-            If (L = 111 Or L = 103) And IsApos(N2) Then dig = dig + 1       ' oʻ gʻ
+            If (L = 111 Or L = 103) And IsApos(N2) Then dig = dig + 1       ' o' g'
         End If
     Next
     If cyr > lat Then
@@ -102,32 +109,32 @@ Public Function UzDetect(ByVal Text As String) As String
 End Function
 
 ' =====================================================================================
-'  ENGINE (mirrors spec/SPEC.md §5)
+'  ENGINE (mirrors spec/SPEC.md section 5)
 ' =====================================================================================
 
-' ---------- Cyrillic → Latin (toNew=False: 1995, toNew=True: 2026) ----------
+' ---------- Cyrillic -> Latin (toNew=False: 1995, toNew=True: 2026) ----------
 Private Function CyrToLatin(ByVal s As String, ByVal toNew As Boolean) As String
-    Dim n As Long, i As Long, c As Integer, L As Integer, P As Integer, nx As Integer, NL As Integer
+    Dim n As Long, i As Long, c As Long, L As Long, P As Long, nx As Long, NL As Long
     Dim up As Boolean, r As String, buf As String, pos As Long
     Dim okinaS As String, tutuqS As String
     okinaS = MarkOkina(): tutuqS = MarkTutuq()
     n = Len(s)
     buf = Space$(n * 2 + 16): pos = 0
     For i = 1 To n
-        c = AscW(Mid$(s, i, 1))
+        c = CodeAt(s, i)
         If Not IsCyr(c) Then
             Put1 buf, pos, c
         Else
             L = CyrLower(c): up = IsCyrUpper(c)
-            P = 0: If i > 1 Then P = AscW(Mid$(s, i - 1, 1))
-            nx = 0: If i < n Then nx = AscW(Mid$(s, i + 1, 1))
+            P = 0: If i > 1 Then P = CodeAt(s, i - 1)
+            nx = 0: If i < n Then nx = CodeAt(s, i + 1)
             NL = CyrLower(nx)
             Select Case L
-                Case &H435                                               ' е
+                Case &H435                                               ' cyr ye
                     If (Not IsCyr(P)) Or IsCyrVowel(P) Or CyrLower(P) = &H44A Or CyrLower(P) = &H44C Then r = "ye" Else r = "e"
-                Case &H446                                               ' ц
+                Case &H446                                               ' cyr tse
                     If IsCyrVowel(P) Then r = "ts" Else r = "s"
-                Case &H44A                                               ' ъ
+                Case &H44A                                               ' cyr hard sign
                     If NL = &H435 Or NL = &H451 Or NL = &H44E Or NL = &H44F Then
                         r = ""
                     ElseIf CyrLower(P) = &H45E And Not UzOptKeepHardSignAfterO Then
@@ -135,16 +142,16 @@ Private Function CyrToLatin(ByVal s As String, ByVal toNew As Boolean) As String
                     Else
                         r = tutuqS
                     End If
-                Case &H44C: r = ""                                       ' ь
-                Case &H448, &H449                                        ' ш щ
+                Case &H44C: r = ""                                       ' cyr soft sign
+                Case &H448, &H449                                        ' cyr sha, shcha
                     If toNew Then r = ChrW(&H15F) Else r = "sh"
-                Case &H447                                               ' ч
+                Case &H447                                               ' cyr che
                     If toNew Then r = ChrW(&HE7) Else r = "ch"
-                Case &H45E                                               ' ў
+                Case &H45E                                               ' cyr short u
                     If toNew Then r = ChrW(&HF6) Else r = "o" & okinaS
-                Case &H493                                               ' ғ
+                Case &H493                                               ' cyr ghe with stroke
                     If toNew Then r = ChrW(&H11F) Else r = "g" & okinaS
-                Case &H441                                               ' с (+ҳ)
+                Case &H441                                               ' cyr es (+ ha with descender)
                     If (Not toNew) And NL = &H4B3 Then r = "s" & tutuqS Else r = "s"
                 Case Else
                     r = C2L(L)
@@ -156,7 +163,7 @@ Private Function CyrToLatin(ByVal s As String, ByVal toNew As Boolean) As String
     CyrToLatin = Left$(buf, pos)
 End Function
 
-Private Function C2L(ByVal L As Integer) As String
+Private Function C2L(ByVal L As Long) As String
     Select Case L
         Case &H430: C2L = "a"
         Case &H431: C2L = "b"
@@ -189,8 +196,8 @@ Private Function C2L(ByVal L As Integer) As String
     End Select
 End Function
 
-' ---------- Latin → Cyrillic ----------
-Private Function L2C(ByVal L As Integer) As Integer
+' ---------- Latin -> Cyrillic ----------
+Private Function L2C(ByVal L As Long) As Long
     Select Case L
         Case 97: L2C = &H430    ' a
         Case 98: L2C = &H431    ' b
@@ -217,15 +224,15 @@ Private Function L2C(ByVal L As Integer) As Integer
         Case 122: L2C = &H437   ' z
         Case 99: L2C = &H446    ' c
         Case 119: L2C = &H432   ' w
-        Case &HF6, &H14D, &HF5: L2C = &H45E   ' ö ō õ
-        Case &H11F: L2C = &H493 ' ğ
-        Case &H15F: L2C = &H448 ' ş
-        Case &HE7: L2C = &H447  ' ç
+        Case &HF6, &H14D, &HF5: L2C = &H45E   ' o-umlaut, o-macron, o-tilde
+        Case &H11F: L2C = &H493 ' g-breve
+        Case &H15F: L2C = &H448 ' s-cedilla
+        Case &HE7: L2C = &H447  ' c-cedilla
         Case Else: L2C = 0
     End Select
 End Function
 
-Private Sub EmitCyr(ByRef buf As String, ByRef pos As Long, ByVal lowerCode As Integer, ByVal up As Boolean)
+Private Sub EmitCyr(ByRef buf As String, ByRef pos As Long, ByVal lowerCode As Long, ByVal up As Boolean)
     If up Then
         Put1 buf, pos, CyrUpper(lowerCode)
     Else
@@ -233,21 +240,21 @@ Private Sub EmitCyr(ByRef buf As String, ByRef pos As Long, ByVal lowerCode As I
     End If
 End Sub
 
-Private Function LatinToCyrScan(ByVal s As String, ByVal isNew As Boolean, ByVal prevCtx As Integer) As String
-    Dim n As Long, i As Long, c As Integer, L As Integer, nx As Integer, N2 As Integer, NL As Integer, P As Integer
+Private Function LatinToCyrScan(ByVal s As String, ByVal isNew As Boolean, ByVal prevCtx As Long) As String
+    Dim n As Long, i As Long, c As Long, L As Long, nx As Long, N2 As Long, NL As Long, P As Long
     Dim up As Boolean, prevIsLetter As Boolean, prevIsVA As Boolean, wordEnds As Boolean
-    Dim buf As String, pos As Long, rest As String, r As Integer
+    Dim buf As String, pos As Long, rest As String, r As Long
     n = Len(s)
     buf = Space$(n * 2 + 16): pos = 0
     i = 1
     Do While i <= n
-        c = AscW(Mid$(s, i, 1))
-        If i > 1 Then P = AscW(Mid$(s, i - 1, 1)) Else P = prevCtx
-        nx = 0: If i < n Then nx = AscW(Mid$(s, i + 1, 1))
-        N2 = 0: If i + 1 < n Then N2 = AscW(Mid$(s, i + 2, 1))
+        c = CodeAt(s, i)
+        If i > 1 Then P = CodeAt(s, i - 1) Else P = prevCtx
+        nx = 0: If i < n Then nx = CodeAt(s, i + 1)
+        N2 = 0: If i + 1 < n Then N2 = CodeAt(s, i + 2)
         If IsApos(c) Then
             If IsLat(P) And IsLat(nx) Then
-                EmitCyr buf, pos, &H44A, IsLatUpper(P)                   ' ъ
+                EmitCyr buf, pos, &H44A, IsLatUpper(P)                   ' cyr hard sign
             ElseIf IsLat(P) And c = TUTUQ Then
                 EmitCyr buf, pos, &H44A, IsLatUpper(P)
             Else
@@ -261,19 +268,19 @@ Private Function LatinToCyrScan(ByVal s As String, ByVal isNew As Boolean, ByVal
             L = LatLower(c): up = IsLatUpper(c): NL = LatLower(nx)
             prevIsLetter = IsLat(P)
             prevIsVA = IsLatVowel(P) Or IsApos(P)
-            If L = 111 And IsApos(nx) Then                                ' oʻ
+            If L = 111 And IsApos(nx) Then                                ' o'
                 EmitCyr buf, pos, &H45E, up: i = i + 2
-            ElseIf L = 103 And IsApos(nx) Then                            ' gʻ
+            ElseIf L = 103 And IsApos(nx) Then                            ' g'
                 EmitCyr buf, pos, &H493, up: i = i + 2
             ElseIf L = 115 And NL = 104 And Not isNew Then               ' sh (1995)
                 EmitCyr buf, pos, &H448, up: i = i + 2
-            ElseIf L = 115 And IsApos(nx) And LatLower(N2) = 104 Then     ' sʼh
+            ElseIf L = 115 And IsApos(nx) And LatLower(N2) = 104 Then     ' s'h
                 EmitCyr buf, pos, &H441, up: i = i + 2
             ElseIf L = 99 And NL = 104 Then                              ' ch
                 EmitCyr buf, pos, &H447, up: i = i + 2
             ElseIf L = 121 And (NL = 111 Or NL = 117 Or NL = 97 Or NL = 101) Then   ' y + vowel
                 If NL = 111 And IsApos(N2) Then
-                    EmitCyr buf, pos, &H439, up: i = i + 1               ' yoʻ → йў
+                    EmitCyr buf, pos, &H439, up: i = i + 1               ' yo' -> cyr y + short u
                 Else
                     If NL = 101 Then
                         If (Not prevIsLetter) Or prevIsVA Then
@@ -297,7 +304,7 @@ Private Function LatinToCyrScan(ByVal s As String, ByVal isNew As Boolean, ByVal
                     EmitCyr buf, pos, &H435, up
                 End If
                 i = i + 1
-            ElseIf L = 116 And NL = 115 And TsRule(s, i, n, P) Then      ' ts → ц
+            ElseIf L = 116 And NL = 115 And TsRule(s, i, n, P) Then      ' ts -> cyr tse
                 EmitCyr buf, pos, &H446, up: i = i + 2
             Else
                 r = L2C(L)
@@ -313,27 +320,27 @@ Private Function LatinToCyrScan(ByVal s As String, ByVal isNew As Boolean, ByVal
     LatinToCyrScan = Left$(buf, pos)
 End Function
 
-Private Function TsRule(ByVal s As String, ByVal i As Long, ByVal n As Long, ByVal P As Integer) As Boolean
+Private Function TsRule(ByVal s As String, ByVal i As Long, ByVal n As Long, ByVal P As Long) As Boolean
     Dim rest As String, wordEnds As Boolean
     rest = LCase$(Mid$(s, i + 2, 3))
     If Left$(rest, 3) = "iya" Or Left$(rest, 3) = "ion" Then TsRule = True: Exit Function
     If UzOptNoTsFinal Then Exit Function
-    If i + 2 > n Then wordEnds = True Else wordEnds = Not IsLat(AscW(Mid$(s, i + 2, 1)))
+    If i + 2 > n Then wordEnds = True Else wordEnds = Not IsLat(CodeAt(s, i + 2))
     TsRule = wordEnds And IsLatVowel(P)
 End Function
 
 Private Function LatinToCyr(ByVal s As String, ByVal isNew As Boolean) As String
-    Dim n As Long, i As Long, j As Long, c As Integer, out As String
+    Dim n As Long, i As Long, j As Long, c As Long, out As String
     If UzOptNoDictionary Then LatinToCyr = LatinToCyrScan(s, isNew, 0): Exit Function
     n = Len(s): i = 1
     Do While i <= n
-        c = AscW(Mid$(s, i, 1))
+        c = CodeAt(s, i)
         If Not (IsLat(c) Or IsApos(c)) Then
             out = out & ChrW(c): i = i + 1
         Else
             j = i
             Do While j <= n
-                c = AscW(Mid$(s, j, 1))
+                c = CodeAt(s, j)
                 If IsLat(c) Or IsApos(c) Then j = j + 1 Else Exit Do
             Loop
             out = out & WordWithDict(Mid$(s, i, j - i), isNew)
@@ -346,7 +353,7 @@ End Function
 Private Function WordWithDict(ByVal w As String, ByVal isNew As Boolean) As String
     Dim key As String, k As Long, hit As Long, consumed As Long, built As String
     Dim stemSrc As String, rest As String, value As String, cyrStem As String
-    Dim letters As Long, uppers As Long, firstUpper As Boolean, q As Long, ch As Integer
+    Dim letters As Long, uppers As Long, firstUpper As Boolean, q As Long, ch As Long
     key = NormKey(w): hit = 0
     For k = 1 To mDictN
         If Len(key) >= Len(mDictKey(k)) Then
@@ -362,7 +369,7 @@ Private Function WordWithDict(ByVal w As String, ByVal isNew As Boolean) As Stri
     stemSrc = Left$(w, consumed): rest = Mid$(w, consumed + 1)
     value = mDictVal(hit)
     For q = 1 To Len(stemSrc)
-        ch = AscW(Mid$(stemSrc, q, 1))
+        ch = CodeAt(stemSrc, q)
         If IsLat(ch) Then
             letters = letters + 1
             If IsLatUpper(ch) Then
@@ -378,13 +385,13 @@ Private Function WordWithDict(ByVal w As String, ByVal isNew As Boolean) As Stri
     Else
         cyrStem = value
     End If
-    WordWithDict = cyrStem & LatinToCyrScan(rest, isNew, AscW(Right$(stemSrc, 1)))
+    WordWithDict = cyrStem & LatinToCyrScan(rest, isNew, CodeAt(stemSrc, Len(stemSrc)))
 End Function
 
 Private Function NormKey(ByVal w As String) As String
-    Dim i As Long, c As Integer, o As String
+    Dim i As Long, c As Long, o As String
     For i = 1 To Len(w)
-        c = LatLower(AscW(Mid$(w, i, 1)))
+        c = LatLower(CodeAt(w, i))
         If IsApos(c) Then
             o = o & "'"
         ElseIf c = &HF6 Or c = &H14D Or c = &HF5 Then
@@ -402,17 +409,17 @@ Private Function NormKey(ByVal w As String) As String
     NormKey = o
 End Function
 
-' ---------- Latin 1995 → Latin 2026 ----------
+' ---------- Latin 1995 -> Latin 2026 ----------
 Private Function LatToNew(ByVal s As String) As String
-    Dim n As Long, i As Long, c As Integer, L As Integer, nx As Integer, N2 As Integer, NL As Integer, P As Integer
+    Dim n As Long, i As Long, c As Long, L As Long, nx As Long, N2 As Long, NL As Long, P As Long
     Dim up As Boolean, buf As String, pos As Long
     n = Len(s): buf = Space$(n + 16): pos = 0: i = 1
     Do While i <= n
-        c = AscW(Mid$(s, i, 1)): L = LatLower(c): up = IsLatUpper(c)
-        nx = 0: If i < n Then nx = AscW(Mid$(s, i + 1, 1))
-        N2 = 0: If i + 1 < n Then N2 = AscW(Mid$(s, i + 2, 1))
+        c = CodeAt(s, i): L = LatLower(c): up = IsLatUpper(c)
+        nx = 0: If i < n Then nx = CodeAt(s, i + 1)
+        N2 = 0: If i + 1 < n Then N2 = CodeAt(s, i + 2)
         NL = LatLower(nx)
-        P = 0: If i > 1 Then P = AscW(Mid$(s, i - 1, 1))
+        P = 0: If i > 1 Then P = CodeAt(s, i - 1)
         If IsApos(c) Then
             If IsLat(P) And IsLat(nx) Then
                 PutS buf, pos, MarkTutuq()
@@ -466,16 +473,16 @@ Private Function LatToNew(ByVal s As String) As String
     LatToNew = Left$(buf, pos)
 End Function
 
-' ---------- Latin 2026 → Latin 1995 ----------
+' ---------- Latin 2026 -> Latin 1995 ----------
 Private Function NewToLat(ByVal s As String) As String
-    Dim n As Long, i As Long, c As Integer, L As Integer, nx As Integer, NL As Integer, P As Integer
+    Dim n As Long, i As Long, c As Long, L As Long, nx As Long, NL As Long, P As Long
     Dim up As Boolean, buf As String, pos As Long
     n = Len(s): buf = Space$(n * 2 + 16): pos = 0: i = 1
     Do While i <= n
-        c = AscW(Mid$(s, i, 1)): L = LatLower(c): up = IsLatUpper(c)
-        nx = 0: If i < n Then nx = AscW(Mid$(s, i + 1, 1))
+        c = CodeAt(s, i): L = LatLower(c): up = IsLatUpper(c)
+        nx = 0: If i < n Then nx = CodeAt(s, i + 1)
         NL = LatLower(nx)
-        P = 0: If i > 1 Then P = AscW(Mid$(s, i - 1, 1))
+        P = 0: If i > 1 Then P = CodeAt(s, i - 1)
         If IsApos(c) Then
             If IsLat(P) And IsLat(nx) Then
                 PutS buf, pos, MarkTutuq()
@@ -501,7 +508,7 @@ Private Function NewToLat(ByVal s As String) As String
         ElseIf L = &HE7 Then
             PutS buf, pos, CaseOut(s, i, up, "ch")
         ElseIf L = 115 And NL = 104 Then
-            Put1 buf, pos, c: PutS buf, pos, MarkTutuq()                 ' Ishoq → Isʼhoq
+            Put1 buf, pos, c: PutS buf, pos, MarkTutuq()                 ' Ishoq -> Is'hoq
         Else
             Put1 buf, pos, c
         End If
@@ -520,7 +527,7 @@ Private Function MarkTutuq() As String
     If UzOptAscii Then MarkTutuq = "'" Else MarkTutuq = ChrW(TUTUQ)
 End Function
 
-Private Sub Put1(ByRef buf As String, ByRef pos As Long, ByVal c As Integer)
+Private Sub Put1(ByRef buf As String, ByRef pos As Long, ByVal c As Long)
     pos = pos + 1
     Mid$(buf, pos, 1) = ChrW(c)
 End Sub
@@ -530,92 +537,92 @@ Private Sub PutS(ByRef buf As String, ByRef pos As Long, ByVal s As String)
     pos = pos + Len(s)
 End Sub
 
-Private Function InSet(ByVal setStr As String, ByVal c As Integer) As Boolean
+Private Function InSet(ByVal setStr As String, ByVal c As Long) As Boolean
     If c <= 0 Then Exit Function
     InSet = (InStr(1, setStr, ChrW(c), vbBinaryCompare) > 0)
 End Function
-Private Function IsCyr(ByVal c As Integer) As Boolean
+Private Function IsCyr(ByVal c As Long) As Boolean
     IsCyr = InSet(mCyrLower, c) Or InSet(mCyrUpper, c)
 End Function
-Private Function IsCyrUpper(ByVal c As Integer) As Boolean
+Private Function IsCyrUpper(ByVal c As Long) As Boolean
     IsCyrUpper = InSet(mCyrUpper, c)
 End Function
-Private Function CyrLower(ByVal c As Integer) As Integer
+Private Function CyrLower(ByVal c As Long) As Long
     Dim p As Long
     CyrLower = c
     If c <= 0 Then Exit Function
     p = InStr(1, mCyrUpper, ChrW(c), vbBinaryCompare)
-    If p > 0 Then CyrLower = AscW(Mid$(mCyrLower, p, 1))
+    If p > 0 Then CyrLower = CodeAt(mCyrLower, p)
 End Function
-Private Function CyrUpper(ByVal c As Integer) As Integer
+Private Function CyrUpper(ByVal c As Long) As Long
     Dim p As Long
     CyrUpper = c
     If c <= 0 Then Exit Function
     p = InStr(1, mCyrLower, ChrW(c), vbBinaryCompare)
-    If p > 0 Then CyrUpper = AscW(Mid$(mCyrUpper, p, 1))
+    If p > 0 Then CyrUpper = CodeAt(mCyrUpper, p)
 End Function
-Private Function IsCyrVowel(ByVal c As Integer) As Boolean
+Private Function IsCyrVowel(ByVal c As Long) As Boolean
     IsCyrVowel = InSet(mCyrVowels, CyrLower(c))
 End Function
-Private Function IsLat(ByVal c As Integer) As Boolean
+Private Function IsLat(ByVal c As Long) As Boolean
     IsLat = InSet(mLatLower, c) Or InSet(mLatUpper, c)
 End Function
-Private Function IsLatUpper(ByVal c As Integer) As Boolean
+Private Function IsLatUpper(ByVal c As Long) As Boolean
     IsLatUpper = InSet(mLatUpper, c)
 End Function
-Private Function LatLower(ByVal c As Integer) As Integer
+Private Function LatLower(ByVal c As Long) As Long
     Dim p As Long
     LatLower = c
     If c <= 0 Then Exit Function
     p = InStr(1, mLatUpper, ChrW(c), vbBinaryCompare)
-    If p > 0 Then LatLower = AscW(Mid$(mLatLower, p, 1))
+    If p > 0 Then LatLower = CodeAt(mLatLower, p)
 End Function
-Private Function LatUpper(ByVal c As Integer) As Integer
+Private Function LatUpper(ByVal c As Long) As Long
     Dim p As Long
     LatUpper = c
     If c <= 0 Then Exit Function
     p = InStr(1, mLatLower, ChrW(c), vbBinaryCompare)
-    If p > 0 Then LatUpper = AscW(Mid$(mLatUpper, p, 1))
+    If p > 0 Then LatUpper = CodeAt(mLatUpper, p)
 End Function
-Private Function IsLatVowel(ByVal c As Integer) As Boolean
+Private Function IsLatVowel(ByVal c As Long) As Boolean
     IsLatVowel = InSet(mLatVowels, LatLower(c))
 End Function
-Private Function IsApos(ByVal c As Integer) As Boolean
+Private Function IsApos(ByVal c As Long) As Boolean
     IsApos = InSet(mApos, c)
 End Function
-Private Function IsLetter(ByVal c As Integer) As Boolean
+Private Function IsLetter(ByVal c As Long) As Boolean
     IsLetter = IsCyr(c) Or IsLat(c)
 End Function
-Private Function IsUpperLetter(ByVal c As Integer) As Boolean
+Private Function IsUpperLetter(ByVal c As Long) As Boolean
     IsUpperLetter = IsCyrUpper(c) Or IsLatUpper(c)
 End Function
 
 Private Function UpperStr(ByVal s As String) As String
     Dim i As Long, o As String
     For i = 1 To Len(s)
-        o = o & ChrW(LatUpper(CyrUpper(AscW(Mid$(s, i, 1)))))
+        o = o & ChrW(LatUpper(CyrUpper(CodeAt(s, i))))
     Next
     UpperStr = o
 End Function
 Private Function UpperFirst(ByVal s As String) As String
     If Len(s) = 0 Then Exit Function
-    UpperFirst = ChrW(LatUpper(CyrUpper(AscW(Left$(s, 1))))) & Mid$(s, 2)
+    UpperFirst = ChrW(LatUpper(CyrUpper(CodeAt(s, 1)))) & Mid$(s, 2)
 End Function
 
-' SPEC §4: next letter (skipping one apostrophe) uppercase → ALL CAPS; else previous letter if no next letter
+' SPEC section 4: next letter (skipping one apostrophe) uppercase -> ALL CAPS; else previous letter if no next letter
 Private Function NextLetterIsUpper(ByVal s As String, ByVal i As Long) As Boolean
-    Dim j As Long, k As Long, c As Integer, n As Long
+    Dim j As Long, k As Long, c As Long, n As Long
     n = Len(s)
     j = i + 1
-    If j <= n Then If IsApos(AscW(Mid$(s, j, 1))) Then j = j + 1
+    If j <= n Then If IsApos(CodeAt(s, j)) Then j = j + 1
     If j <= n Then
-        c = AscW(Mid$(s, j, 1))
+        c = CodeAt(s, j)
         If IsLetter(c) Then NextLetterIsUpper = IsUpperLetter(c): Exit Function
     End If
     k = i - 1
-    If k >= 1 Then If IsApos(AscW(Mid$(s, k, 1))) Then k = k - 1
+    If k >= 1 Then If IsApos(CodeAt(s, k)) Then k = k - 1
     If k >= 1 Then
-        c = AscW(Mid$(s, k, 1))
+        c = CodeAt(s, k)
         If IsLetter(c) Then NextLetterIsUpper = IsUpperLetter(c): Exit Function
     End If
     NextLetterIsUpper = False
@@ -627,7 +634,7 @@ Private Function CaseOut(ByVal s As String, ByVal i As Long, ByVal srcUpper As B
     If NextLetterIsUpper(s, i) Then CaseOut = UpperStr(r) Else CaseOut = UpperFirst(r)
 End Function
 
-' "043E 0431" -> "об"
+' "043E 0431" -> cyr "ob"
 Private Function U(ByVal hexCodes As String) As String
     Dim i As Long, o As String, tok As String
     hexCodes = Trim$(hexCodes) & " "
@@ -679,7 +686,7 @@ Private Sub UzInit()
     mCyrVowels = U("0430 0435 0451 0438 043E 0443 044D 044E 044F 045E 044B")
     mLatVowels = U("0061 0065 0069 006F 0075 00F6 014D 00F5")
     ReDim mDictKey(1 To 128): ReDim mDictVal(1 To 128): mDictN = 0
-    ' --- dictionary, longest keys first (generated from spec/SPEC.md §6) ---
+    ' --- dictionary, longest keys first (generated from spec/SPEC.md section 6) ---
     AddD "konsentratsiya", U("043A 043E 043D 0446 0435 043D 0442 0440 0430 0446 0438 044F")
     AddD "sivilizatsiya", U("0446 0438 0432 0438 043B 0438 0437 0430 0446 0438 044F")
     AddD "konstruksiya", U("043A 043E 043D 0441 0442 0440 0443 043A 0446 0438 044F")
@@ -762,7 +769,7 @@ Private Sub UzInit()
 End Sub
 
 ' =====================================================================================
-'  SELF-TEST (Alt+F8 → UzSelfTest). Mirrors a sample of spec/fixtures.json.
+'  SELF-TEST (Alt+F8 -> UzSelfTest). Mirrors a sample of spec/fixtures.json.
 ' =====================================================================================
 Public Sub UzSelfTest()
     Dim ok As Long, bad As Long, msg As String

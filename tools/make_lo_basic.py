@@ -44,7 +44,9 @@ def build():
 
 
 def hx(s):
-    return " ".join("%04X" % ord(c) for c in s)
+    """UTF-16 code units in hex, the way Basic's ChrW() takes them (an emoji is two units)."""
+    b = s.encode("utf-16-le", "surrogatepass")
+    return " ".join("%04X" % (b[i] | b[i + 1] << 8) for i in range(0, len(b), 2))
 
 
 def build_test_module(out_dir, result_path):
@@ -52,11 +54,15 @@ def build_test_module(out_dir, result_path):
     lines = ["Option Explicit", "Option VBASupport 1", "",
              "Private okN As Long, badN As Long, logS As String", "",
              "Private Function UX(ByVal h As String) As String",
-             "    Dim i As Long, o As String, tok As String",
+             "    Dim i As Long, o As String, tok As String, v As Long",
              "    h = Trim(h) & \" \"",
              "    For i = 1 To Len(h)",
              "        If Mid(h, i, 1) = \" \" Then",
-             "            If Len(tok) > 0 Then o = o & ChrW(CLng(\"&H\" & tok)): tok = \"\"",
+             "            If Len(tok) > 0 Then",
+             "                v = CLng(\"&H\" & tok)",
+             "                If v < 0 Then v = v + 65536",  # &H8000-&HFFFF parse as negative 16-bit integers
+             "                o = o & ChrW(v): tok = \"\"",
+             "            End If",
              "        Else",
              "            tok = tok & Mid(h, i, 1)",
              "        End If",
@@ -100,6 +106,7 @@ def build_test_module(out_dir, result_path):
               '    Print #f, okN & " passed, " & badN & " failed (UzTranslitLO.bas via LibreOffice Basic)"',
               '    Print #f, logS',
               '    Close #f',
+              '    RunDiff',
               '    Exit Sub',
               'ErrH:',
               '    ef = FreeFile',
@@ -113,11 +120,84 @@ def build_test_module(out_dir, result_path):
         lines += ch
         lines.append("End Sub")
         lines.append("")
+    # differential corpus (tools/make_differential.mjs), read at run time: too large to inline in a module
+    tsv = write_differential_tsv(out_dir)
+    lines += ["Private Sub RunDiff",
+              "    Dim f As Integer, ln As String, p() As String, got As String, okD As Long, badD As Long, logD As String",
+              '    If Dir("%s") = "" Then Exit Sub' % tsv,
+              "    f = FreeFile",
+              '    Open "%s" For Input As #f' % tsv,
+              "    Do While Not EOF(f)",
+              "        Line Input #f, ln",
+              "        p = Split(ln, Chr(9))",
+              '        If p(0) = "detect" Then',
+              "            On Error Resume Next",
+              "            got = UzDetect(UX(p(3)))",
+              "            If Err <> 0 Then got = \"BASIC ERROR \" & Err & \": \" & Error$: Err.Clear",
+              "            On Error GoTo 0",
+              "            If got = p(4) Then",
+              "                okD = okD + 1",
+              "            Else",
+              "                badD = badD + 1",
+              '                If badD <= 20 Then logD = logD & "DIFF detect " & p(3) & " want=" & p(4) & " got=" & got & Chr(10)',
+              "            End If",
+              "        Else",
+              '            UzOptAscii = (Mid(p(2), 1, 1) = "1")',
+              '            UzOptKeepHardSignAfterO = (Mid(p(2), 2, 1) = "1")',
+              '            UzOptNoTsFinal = (Mid(p(2), 3, 1) = "1")',
+              '            UzOptNoDictionary = (Mid(p(2), 4, 1) = "1")',
+              "            On Error Resume Next",
+              "            got = UzConvert(UX(p(3)), p(0), p(1))",
+              "            If Err <> 0 Then got = \"BASIC ERROR \" & Err & \": \" & Error$: Err.Clear",
+              "            On Error GoTo 0",
+              "            If got = UX(p(4)) Then",
+              "                okD = okD + 1",
+              "            Else",
+              "                badD = badD + 1",
+              '                If badD <= 20 Then logD = logD & "DIFF " & p(0) & "->" & p(1) & " " & p(2) & " in=" & p(3) & " want=" & UX(p(4)) & " got=" & got & Chr(10)',
+              "            End If",
+              "        End If",
+              "    Loop",
+              "    Close #f",
+              "    UzOptAscii = False: UzOptKeepHardSignAfterO = False: UzOptNoTsFinal = False: UzOptNoDictionary = False",
+              "    f = FreeFile",
+              '    Open "%s" For Append As #f' % result_path,
+              '    Print #f, okD & " passed, " & badD & " failed (differential vs core/js, VBA-representable options)"',
+              "    Print #f, logD",
+              "    Close #f",
+              "End Sub", ""]
     os.makedirs(out_dir, exist_ok=True)
     p = os.path.join(out_dir, "UzTest.bas")
     open(p, "w", encoding="utf-8").write("\n".join(lines))
     print("wrote", p, "with", sum(len(c) for c in chunks), "checks")
     return p
+
+
+def write_differential_tsv(out_dir):
+    """build/differential.json → TSV for the Basic runner: only cases the VBA options can express (no URL skipping,
+    marks either ʻ/ʼ or ASCII). Columns: from, to, flags (ascii keepHardSign noTsFinal noDictionary), input, output."""
+    path = os.path.join(out_dir, "differential.tsv")
+    src = os.path.join(ROOT, "build", "differential.json")
+    if os.path.exists(path):
+        os.remove(path)
+    if not os.path.exists(src):
+        return path
+    d = json.load(open(src, encoding="utf-8"))
+    rows = []
+    for c in d["cases"]:
+        o = c["options"]
+        marks = (o["okina"], o["tutuq"])
+        if o["skipUrls"] or marks not in (("ʻ", "ʼ"), ("'", "'")):
+            continue
+        flags = "".join("1" if v else "0" for v in (marks == ("'", "'"), not o["dropHardSignAfterO"], not o["tsFinal"], not o["dictionary"]))
+        rows.append("\t".join((c["from"], c["to"], flags, hx(c["in"]), hx(c["out"]))))
+    # Basic runs ~30 cases a second: a few thousand keep the suite at about two minutes
+    rows = rows[:int(os.environ.get("UZT_LO_DIFF_CASES", 3000))]
+    rows += ["\t".join(("detect", "", "", hx(x["in"]), x["expect"])) for x in d["detect"][:500]]
+    os.makedirs(out_dir, exist_ok=True)
+    with open(path, "w", encoding="ascii", newline="\n") as f:
+        f.write("\n".join(rows) + "\n")
+    return path
 
 
 XBA = ('<?xml version="1.0" encoding="UTF-8"?>\n'
