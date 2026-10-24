@@ -32,3 +32,14 @@ for (const [from, to] of [['cyr', 'lat'], ['cyr', 'new'], ['lat', 'cyr'], ['new'
   console.log(`${from}->${to}`.padEnd(10), String(Math.round(tj)).padStart(6), String(Math.round(tw)).padStart(9),
     (tj / tw).toFixed(1).padStart(9) + 'x', ' ', rj === rw);
 }
+
+// the plain-JS fallback (wasm2js translation of the same engine)
+const { fromExports } = await import('./uztranslit-wasm.mjs');
+const F = fromExports(await import('./build/uztranslit.engine.js'));
+console.log('\nfallback   js ms   engine.js ms   ratio');
+for (const [from, to] of [['cyr', 'lat'], ['lat', 'cyr'], ['lat', 'new']]) {
+  const [tj] = time(() => ref.convert(text[from], from, to));
+  const [tf, rf] = time(() => F.convert(text[from], from, to));
+  console.log(`${from}->${to}`.padEnd(10), String(Math.round(tj)).padStart(6), String(Math.round(tf)).padStart(14),
+    (tj / tf).toFixed(1).padStart(7) + 'x', rf === ref.convert(text[from], from, to));
+}

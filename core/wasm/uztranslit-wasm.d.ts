@@ -17,9 +17,11 @@ export declare const SCRIPTS: readonly Script[];
 export declare const DEFAULTS: Readonly<Required<Options>>;
 
 export declare function instantiate(source: WebAssembly.Module | BufferSource | Response): Promise<UzTranslitWasm>;
+/** Wraps the exports of build/uztranslit.engine.js (the engine translated to plain JavaScript). */
+export declare function fromExports(exports: object): UzTranslitWasm;
 
 export declare class UzTranslitWasm {
-  constructor(instance: WebAssembly.Instance);
+  constructor(instance: WebAssembly.Instance | { exports: object });
   convert(text: string, from: Source, to: Script, options?: Options): string;
   convertSegments(pieces: readonly string[], from: Source, to: Script, options?: Options): { pieces: string[]; from: Script };
   detect(text: string): Script;

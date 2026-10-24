@@ -33,6 +33,11 @@ export async function instantiate(source) {
   return new UzTranslitWasm(await WebAssembly.instantiate(module, IMPORTS));
 }
 
+/** Wraps build/uztranslit.engine.js — the same engine translated to plain JavaScript (no WebAssembly). */
+export function fromExports(exports) {
+  return new UzTranslitWasm({ exports });
+}
+
 function scriptCode(s, allowAuto) {
   const c = CODE[s];
   if (c === undefined || (c === 3 && !allowAuto)) throw new Error('UzTranslit: unknown script ' + s);
