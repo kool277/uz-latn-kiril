@@ -28,8 +28,8 @@ CI: [`.github/workflows/android.yml`](../../.github/workflows/android.yml) gener
 
 ### What the tests check
 
-* `core` — `FixturesTest` runs every entry of `spec/fixtures.json` (192 cases, 8 roundtrips, 9 detections,
-  3 optional features: **212/212**). `DifferentialTest` compares the engine with the reference
+* `core` — `FixturesTest` runs every entry of `spec/fixtures.json` (196 cases, 8 roundtrips, 9 detections,
+  3 optional features: **216/216**). `DifferentialTest` compares the engine with the reference
   `core/js/uztranslit.js` on `build/differential.json` (20,000 random conversions in ten directions with random
   options, plus 2,000 detections); without that file it is skipped with a message. `DictionaryTest` reads SPEC §6
   from `spec/SPEC.md` and requires `UzDictionary` to hold exactly those entries in that order. `UzTranslitTest`

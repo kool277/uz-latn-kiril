@@ -1,14 +1,15 @@
 # CLAUDE.md — standing rules for this repository
 
 UzTranslit converts Uzbek text between Cyrillic (`cyr`), Latin 1995 (`lat`) and Latin 2026 (`new`: Ö Ğ Ş Ç per law OʻRQ-1184, 21 Oct 2026).
-`CLAUDE_CODE_PROMPT.md` is the phased plan (web done; Android, iOS, Qt, Office add-in, releases to come).
+`CLAUDE_CODE_PROMPT.md` is the phased plan (all phases built; releases come from a `v*` tag via `release.yml`).
 
 ## Source of truth
-- `spec/SPEC.md` defines the algorithm; `spec/fixtures.json` defines correctness (212 checks). Both are versioned together.
+- `spec/SPEC.md` defines the algorithm; `spec/fixtures.json` defines correctness (216 checks). Both are versioned together.
 - A conversion rule is changed **only** by editing the spec and fixtures first, then every port. Never patch one port.
 - Ports: `core/js` (reference), `core/python`, `core/wasm` (AssemblyScript → WebAssembly, plus the same engine translated
-  to plain JS by wasm2js), `office-vba` (VBA 5–7, also feeds `libreoffice/` through `tools/make_lo_basic.py`).
-  Planned under `platforms/`: android (Kotlin), ios (Swift), qt-desktop (C++), office-addin (Office.js).
+  to plain JS by wasm2js), `office-vba` (VBA 5–7, also feeds `libreoffice/` through `tools/make_lo_basic.py`),
+  `platforms/android` (Kotlin), `platforms/ios` (Swift), `platforms/qt-desktop` (C++/Qt 6). The dictionary (SPEC §6)
+  is copied in every one of them; `platforms/office-addin` (Office.js) uses `core/js`.
 
 ## How to test
 ```
@@ -20,7 +21,14 @@ cd web && npm run test:engine          # web engine: fixtures, every document fo
 cd web && npm test                     # Angular unit tests (vitest, jsdom)
 cd web && npm run build && npm run e2e # Playwright against the production build (npx playwright install chromium once)
 python3 tools/make_lo_basic.py --test && python3 tools/lo_run_macro.py Standard.UzTest.RunAll build/lo-test/result.txt
-python3 tools/build_oxt.py             # rebuilds both .oxt files
+python3 tools/lo_run_macro.py UzOffice.UzCheck.Run build/lo-test/office.txt   # whole Office module compiles, UzSelfTest
+python3 tools/lo_extension_test.py     # both .oxt end to end in Writer/Calc/Impress (+ Calc formulas via My Macros)
+python3 tools/vba_lint.py office-vba/*.bas     # undeclared names etc.: one would break every macro in real VBA
+python3 tools/test_add_ribbon.py       # Office ribbon injection (tools/add_ribbon.py)
+node platforms/office-addin/test/run.mjs       # add-in logic against fake Word/Excel/PowerPoint
+python3 tools/test_mine_dictionary.py  # dictionary miner (tools/mine_dictionary.py)
+platforms/android: ./gradlew test assembleDebug · platforms/ios/scripts/test.sh · platforms/qt-desktop: README (Docker)
+python3 tools/build_oxt.py             # rebuilds both .oxt files (reproducible: commit them with their sources)
 python3 tools/make_doc_fixtures.py     # regenerates web/test/fixtures/docs/* with LibreOffice
 ```
 A change is not done until every suite prints `0 failed`. The web app needs Node 22.22+/24.15+/26+ (`.nvmrc`: 24);
@@ -33,8 +41,14 @@ profile — installing the test library there replaces the user's My Macros ▸ 
 - All relevant characters are in the BMP, so UTF-16 code-unit iteration (JS, Qt, Swift UTF-16 view, Kotlin) is fine.
 - Empty-string/undefined guards: `"".indexOf("")` is 0 in JS — every helper must treat "no character" explicitly.
 - Basic is case-insensitive: never declare `n` and `N` in one scope. Single-line `If … Then Sub a, b Else Sub c, d` is invalid in LibreOffice Basic — use block `If`.
-- Non-ASCII in `office-vba/UzTranslit.bas` only via `ChrW`/`U("hex hex …")`; the module must stay pure ASCII.
-- Rich-text hosts: convert runs/portions (Word runs, LibreOffice text portions, PowerPoint `Runs`), restore character attributes after replacing a portion (`UzLO_ReplacePortion` / `_replace_portion`).
+- Non-ASCII in `office-vba/*.bas` and `libreoffice/UzTranslitLO.bas` only via `ChrW`/`U("hex hex …")`; they stay pure
+  ASCII, and `office-vba/*.bas` are stored with CRLF (`.gitattributes`): the VBA editor's Import needs both.
+- Rich-text hosts: a paragraph is converted as one string and split back over its runs/portions with
+  `UzSplitConvert` / `_split` (linear: no rule looks across whitespace). LibreOffice replaces a portion without
+  copying attributes (`UzLO_ReplacePortion`: Writer inserts after the first character, cells/shapes at the end) inside
+  locked controllers and one undo context. Word never rewrites fields, pictures, content controls or special marks
+  and puts bookmarks back (`UzWord_SetText`).
+- LibreOffice cannot call an extension's Basic functions from Calc cells: formulas need the module in My Macros.
 - Default options: okina U+02BB, tutuq U+02BC, dropHardSignAfterO, tsFinal, dictionary, skipUrls (where tokenisation is possible).
 - `core/wasm/build-js.mjs` recompiles the AssemblyScript source with `--disable bulk-memory` for wasm2js; both builds
   must pass `core/wasm/test.mjs`. AssemblyScript string literals cannot contain U+2028/U+2029 (use char codes).

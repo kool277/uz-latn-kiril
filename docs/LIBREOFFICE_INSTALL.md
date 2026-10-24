@@ -20,7 +20,7 @@ What a run keeps:
 * **One undo step.** <kbd>Ctrl</kbd>+<kbd>Z</kbd> takes the whole run back. Track changes is paused during the run (it would keep every old word next to its conversion) and switched back on afterwards.
 * **Speed.** The screen is not redrawn during the run: a paragraph of 600 differently formatted runs (text pasted from a PDF) converts in a few seconds.
 
-This edition is written in LibreOffice Basic (the same engine as the Office VBA module) and needs **no Python**, so it also works on Debian/Ubuntu builds without `libreoffice-script-provider-python`. CI checks it against the fixture corpus (210 conversions), 3,500 cases of the differential corpus and the paragraph splitter, and runs both editions end to end on Writer, Calc and Impress documents (`tools/lo_extension_test.py`). LibreOffice Basic is slow: about 1 ms per character, so a 100-page document takes a few minutes. The Python edition is several times faster.
+This edition is written in LibreOffice Basic (the same engine as the Office VBA module) and needs **no Python**, so it also works on Debian/Ubuntu builds without `libreoffice-script-provider-python`. CI checks it against the fixture corpus (214 checks), 3,500 cases of the differential corpus and the paragraph splitter, and runs both editions end to end on Writer, Calc and Impress documents (`tools/lo_extension_test.py`). LibreOffice Basic is slow: about 1 ms per character, so a 100-page document takes a few minutes. The Python edition is several times faster.
 
 `uztranslit-libreoffice-python.oxt` is the same extension using the Python core (`core/python/uztranslit.py`); it needs the Python script provider (`libreoffice-script-provider-python` on Debian/Ubuntu; bundled on Windows/macOS).
 

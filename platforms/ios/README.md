@@ -6,7 +6,7 @@ and Latin 2026 (Oʻ → Ö, Gʻ → Ğ, Sh → Ş, Ch → Ç), with auto-detecti
 
 | Part | Path | Status |
 |---|---|---|
-| Swift package `UzTranslitCore` (engine, pure Swift, no Foundation) | `UzTranslitCore/Sources/UzTranslitCore` | 212/212 fixtures ✔, 20,000 + 2,000 differential checks vs `core/js` ✔ (Linux, Swift 6.0 and 6.4) |
+| Swift package `UzTranslitCore` (engine, pure Swift, no Foundation) | `UzTranslitCore/Sources/UzTranslitCore` | 216/216 fixtures ✔, 20,000 + 2,000 differential checks vs `core/js` ✔ (Linux, Swift 6.0 and 6.4) |
 | `UzTranslitKit` (settings, counts, text files; shared by the apps) | `UzTranslitCore/Sources/UzTranslitKit` | unit tests ✔ |
 | iOS 16+ app, Share + Action extensions, macOS 13+ app (SwiftUI) | `Sources/`, `Resources/`, `Config/`, `project.yml` | built by CI (`.github/workflows/ios.yml`) |
 
@@ -45,7 +45,7 @@ platforms/ios/scripts/sync-fixtures.sh    # spec/fixtures.json (+ build/differen
 cd platforms/ios/UzTranslitCore && swift test
 ```
 
-Expected: `212 passed, 0 failed (fixtures.json v1.0.0 …)` from `FixturesTests` and
+Expected: `216 passed, 0 failed (fixtures.json v1.0.0 …)` from `FixturesTests` and
 `conversions 20000 passed, 0 failed; detections 2000 passed, 0 failed` from `DifferentialTests` (skipped with a
 message when `differential.json` was not synced). Without a local Swift toolchain (Linux), use Docker:
 

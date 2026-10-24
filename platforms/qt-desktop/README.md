@@ -38,7 +38,7 @@ docker run --rm --user "$(id -u):$(id -g)" -v "$PWD":/repo -w /repo/platforms/qt
 
 | test | what it checks |
 |---|---|
-| `tst_fixtures` | `spec/fixtures.json` (cases, roundtrips, detect, optional): **212 passed, 0 failed**. CMake copies the file into the build tree (`configure_file`) and compiles it into a Qt resource; no case is written in C++. |
+| `tst_fixtures` | `spec/fixtures.json` (cases, roundtrips, detect, optional): **216 passed, 0 failed**. CMake copies the file into the build tree (`configure_file`) and compiles it into a Qt resource; no case is written in C++. |
 | `tst_differential` | `build/differential.json` from the reference `core/js/uztranslit.js`: **20,000 conversions + 2,000 detections** (every direction, random options, URL fragments, JS whitespace look-alikes). Copied the same way when the file exists at configure time, otherwise skipped with a message (configure again after generating it). |
 | `tst_documents` | UTF-8/UTF-16/BOM round trips, Markdown, SubRip, JSON, HTML, XHTML and XML conversion, auto-detection ignoring markup, batch folders (hidden files, output inside the source, never overwriting a source). |
 | `tst_cli` | the real binary in CLI mode with a non-existent Qt platform plugin and no `DISPLAY`: stdin/stdout, files, `-o`, `--ascii`, BOM/UTF-16 kept, argparse-style errors and exit codes, and all 192 fixture cases through the command line. |

@@ -172,16 +172,20 @@ Before converting, tokenise with `(https?://|www\.)\S+|\S+@\S+\.\S+|@\w+` and pa
 
 ## 6. Dictionary (Latin → Cyrillic stems, lowercase keys with ASCII `'`)
 
-Russian loans where the rules are lossy. Keys are matched as **prefixes of a word** (so suffixes convert normally: kompyuterlar → компьютерлар). Keep keys that are full base words to avoid false prefixes (never add `sent` — it would hit `sentabr`).
+Russian loans where the rules are lossy. Keys are matched as **prefixes of a word** (so suffixes convert normally: kompyuterlar → компьютерлар). Keep keys that are full base words to avoid false prefixes (never add `sent` — it would hit `sentabr`). The longest
+matching key wins, so a word that a shorter key would catch wrongly gets a key of its own with its rule spelling
+(`sirka` vinegar, not цирк; `sinkop…`, not цинк). `yod` (ёд, memory: yodgorlik, yodda) and `yota` (yotadi) are
+common Uzbek words, so йод and йота are not in the list. `tools/mine_dictionary.py` finds such cases in a parallel corpus.
 
 ```
 obyekt объект · subyekt субъект · adyutant адъютант · inyeksiya инъекция · konyunktura конъюнктура
 kompyuter компьютер · intervyu интервью · premyera премьера · batalyon батальон · bulyon бульон
 medalyon медальон · shampinyon шампиньон · kanyon каньон · senyor сеньор · tatyana татьяна · ilya илья · nyuton ньютон
-yod йод · yoga йога · yogurt йогурт · york йорк · yota йота
+yoga йога · yogurt йогурт · york йорк
 sirk цирк · sement цемент · senzura цензура · sentner центнер · sentr центр · sex цех · sikl цикл · silindr цилиндр
 sisterna цистерна · sitata цитата · sitrus цитрус · sellofan целлофан · sellyuloza целлюлоза · selsiy цельсий
 seremoniya церемония · sivilizatsiya цивилизация · sianid цианид · sink цинк · sirkul циркуль · sokol цоколь · sunami цунами · sitadel цитадель
+sirka сирка · sinkop синкоп · sinkret синкрет · sinklinal синклинал
 leksiya лекция · aksiya акция · funksiya функция · seksiya секция · fraksiya фракция · reaksiya реакция · sanksiya санкция
 konstruksiya конструкция · produksiya продукция · redaksiya редакция · kolleksiya коллекция · infeksiya инфекция
 proporsiya пропорция · porsiya порция · konferensiya конференция · litsenziya лицензия · litsey лицей · ofitser офицер
