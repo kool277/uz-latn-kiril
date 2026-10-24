@@ -12,8 +12,8 @@ All six directions, with the rules that matter: е/э, ц → s/ts, ъ/ь, йў 
 | Specification + 212-case conformance corpus | `spec/` | source of truth |
 | JavaScript core (browser/Node, UMD) | `core/js/uztranslit.js` | 212/212 ✔ |
 | Python core + CLI | `core/python/uztranslit.py` | 212/212 ✔ |
-| WebAssembly core (AssemblyScript) + the same engine as plain JS (wasm2js) | `core/wasm/` | 212/212 ✔ both, 0 differences vs the JS core on 80,000 random texts |
-| Web app for **https://latin.jaybi.uz** — Angular 22, WebAssembly on every CPU core, text **and documents**, PWA/offline | `web/` | 212/212 ✔ both engines · 498 engine tests · 10 Playwright tests |
+| WebAssembly core (AssemblyScript) + the same engine as plain JS (wasm2js) | `core/wasm/` | 212/212 ✔ both builds; identical to the JS core on 40,000 random conversions per build in CI (1.2M checked once) |
+| Web app for **https://latin.jaybi.uz** — Angular 22, WebAssembly on every CPU core, text **and documents**, PWA/offline | `web/` | 212/212 ✔ both engines · 499 engine tests · 10 Playwright tests |
 | MS Office macro module (Word/Excel/PowerPoint 97 → 2026, VBA 5–7) | `office-vba/UzTranslit.bas` | engine executed in LibreOffice Basic VBA mode: 210/210 ✔ |
 | LibreOffice extension (menu Tools ▸ UzTranslit) | `libreoffice/uztranslit-libreoffice.oxt` | installed + e2e-tested in Writer/Calc/Impress ✔ |
 | LibreOffice Basic module / Python edition | `libreoffice/UzTranslitLO.bas`, `uztranslit-libreoffice-python.oxt` | ✔ / needs Python provider |
@@ -48,7 +48,7 @@ Web Workers (one per CPU core, up to 8), so nothing is uploaded and large batche
 | RTF, EPUB, FB2, HTML/XHTML, XML, SVG | text, titles, alt/title attributes, metadata | markup, scripts, styles, code, URLs, `translate="no"` |
 | TXT, CSV, Markdown, JSON, SRT/VTT/ASS | text; JSON string values (not keys) | encoding and BOM (legacy Windows-1251/KOI8-R/DOS-866 files become UTF-8), line endings, code blocks, link targets, timings, tags |
 
-A word split across differently formatted runs (**ШАҲ**АР) still converts as one word (**SHAH**AR, **Ş**AHAR):
+A word split across differently formatted runs (**ШАҲ**АР) still converts as one word (**SHAH**AR in Latin 1995, **ŞAH**AR in Latin 2026):
 whole paragraphs go through the engine and each run gets its share back. PDF and the old binary .doc/.xls/.ppt
 are not supported (the app says so); save those as docx/xlsx/pptx first.
 

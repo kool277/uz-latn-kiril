@@ -7,6 +7,14 @@ updates:
     groups:
       angular:
         patterns: ['@angular/*', '@angular-devkit/*', '@schematics/*']
+    ignore:
+      # Angular pins the TypeScript range; majors of both move together with `ng update`
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@angular/*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@angular-devkit/*'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: npm
     directory: /core/wasm
     schedule:
