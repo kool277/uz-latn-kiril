@@ -27,6 +27,16 @@ if command -v soffice >/dev/null 2>&1 && python3 -c "import uno" 2>/dev/null; th
 else
   echo "== LibreOffice not available: Basic suite skipped"
 fi
+if command -v swift >/dev/null 2>&1 || docker image inspect swift:6.4.1-noble >/dev/null 2>&1; then
+  echo "== Swift core (platforms/ios: fixtures + differential)"
+  if "$ROOT/platforms/ios/scripts/test.sh" > "$ROOT/build/swift-test.log" 2>&1; then
+    grep -E "^(212|differential)" "$ROOT/build/swift-test.log"
+  else
+    tail -30 "$ROOT/build/swift-test.log"; fail=1
+  fi
+else
+  echo "== Swift not available (no swift, no swift:6.4.1-noble image): Swift core skipped"
+fi
 echo "== Web engine (fixtures through both engine builds, every document format; LibreOffice round-trips when installed)"
 ( cd "$ROOT/web" &&
   { [ -d node_modules ] || npm ci --no-audit --no-fund --silent; } &&

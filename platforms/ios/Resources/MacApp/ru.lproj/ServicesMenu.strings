@@ -1,0 +1,2 @@
+/* Services menu item of the macOS app (NSServices ▸ NSMenuItem ▸ default in Config/MacApp-Info.plist) */
+"Convert to Yangi lotin" = "Преобразовать в новую латиницу";

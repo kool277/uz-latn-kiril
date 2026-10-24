@@ -1,0 +1,95 @@
+name: iOS
+
+# platforms/ios: the Swift port (UzTranslitCore) and the Apple apps. Job 1 runs the package tests on Linux against
+# spec/fixtures.json and a differential corpus generated from core/js; job 2 generates the Xcode project with
+# XcodeGen and builds the iOS app (with its Share and Action extensions) and the macOS app, unsigned.
+on:
+  push:
+    branches: [main]
+    paths:
+      - platforms/ios/**
+      - spec/**
+      - core/js/**
+      - tools/make_differential.mjs
+      - tools/random-text.mjs
+      - .github/workflows/ios.yml
+  pull_request:
+    paths:
+      - platforms/ios/**
+      - spec/**
+      - core/js/**
+      - tools/make_differential.mjs
+      - tools/random-text.mjs
+      - .github/workflows/ios.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    name: Swift core on Linux (fixtures + differential)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    container: swift:6.4.1-noble
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Differential corpus from the reference (core/js)
+        run: node tools/make_differential.mjs
+      - name: Copy the test data into the package
+        run: platforms/ios/scripts/sync-fixtures.sh
+      - name: swift test
+        working-directory: platforms/ios/UzTranslitCore
+        run: swift test
+
+  apps:
+    name: Xcode build (iOS app + extensions, macOS app)
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
+        with:
+          xcode-version: latest-stable
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Tool versions
+        run: |
+          xcodebuild -version
+          swift --version
+      - name: Every UI string translated (en, uz, ru)
+        run: python3 platforms/ios/scripts/check-localizations.py
+      - name: Install XcodeGen
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+          HOMEBREW_NO_INSTALL_CLEANUP: "1"
+        run: brew install xcodegen
+      - name: Generate the Xcode project
+        id: generate
+        working-directory: platforms/ios
+        run: xcodegen generate
+      - name: Build the iOS app with the Share and Action extensions (Simulator)
+        working-directory: platforms/ios
+        run: >-
+          xcodebuild build -quiet -project UzTranslit.xcodeproj -scheme UzTranslit -configuration Debug
+          -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO
+      - name: Build the macOS app
+        if: ${{ !cancelled() && steps.generate.outcome == 'success' }}
+        working-directory: platforms/ios
+        run: >-
+          xcodebuild build -quiet -project UzTranslit.xcodeproj -scheme UzTranslitMac -configuration Debug
+          -destination 'generic/platform=macOS' CODE_SIGNING_ALLOWED=NO
+      - name: Package tests on macOS (fixtures + differential)
+        if: ${{ !cancelled() }}
+        run: |
+          node tools/make_differential.mjs
+          platforms/ios/scripts/sync-fixtures.sh
+          cd platforms/ios/UzTranslitCore
+          swift test

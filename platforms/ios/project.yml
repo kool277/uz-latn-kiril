@@ -1,0 +1,141 @@
+# XcodeGen spec for the iOS app (+ Share and Action extensions) and the macOS app.
+#   brew install xcodegen && cd platforms/ios && xcodegen generate   → UzTranslit.xcodeproj (not committed)
+# The conversion engine is the local Swift package UzTranslitCore (UzTranslitCore + UzTranslitKit products).
+# Signing is left to the developer: set DEVELOPMENT_TEAM (here or in Xcode) — see README.md.
+name: UzTranslit
+
+options:
+  minimumXcodeGenVersion: "2.39.0"
+  bundleIdPrefix: uz.jaybi
+  developmentLanguage: en
+  deploymentTarget:
+    iOS: "16.0"
+    macOS: "13.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    # the app targets use Swift 5 language mode; the package (swift-tools-version 6.0) builds in Swift 6 mode
+    SWIFT_VERSION: "5.0"
+    GENERATE_INFOPLIST_FILE: "NO"
+    LOCALIZATION_PREFERS_STRING_CATALOGS: "YES"
+    SWIFT_EMIT_LOC_STRINGS: "YES"
+    DEAD_CODE_STRIPPING: "YES"
+
+packages:
+  UzTranslitCore:
+    path: UzTranslitCore
+
+fileGroups:
+  - Config
+  - README.md
+  - fastlane
+  - scripts
+
+targets:
+  UzTranslit:
+    type: application
+    platform: iOS
+    sources:
+      - Sources/Shared
+      - Sources/App
+      - Sources/iOSApp
+      - Resources/Strings
+      - Resources/iOSApp
+    dependencies:
+      - package: UzTranslitCore
+        products: [UzTranslitCore, UzTranslitKit]
+      - target: UzTranslitShare
+      - target: UzTranslitAction
+    settings:
+      base:
+        PRODUCT_NAME: UzTranslit
+        PRODUCT_BUNDLE_IDENTIFIER: uz.jaybi.uztranslit
+        INFOPLIST_FILE: Config/iOSApp-Info.plist
+        CODE_SIGN_ENTITLEMENTS: Config/UzTranslit.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+
+  UzTranslitShare:
+    type: app-extension
+    platform: iOS
+    sources:
+      - Sources/Shared
+      - Sources/Extensions
+      - Sources/ShareExtension
+      - Resources/Strings
+    dependencies:
+      - package: UzTranslitCore
+        products: [UzTranslitCore, UzTranslitKit]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: uz.jaybi.uztranslit.share
+        INFOPLIST_FILE: Config/ShareExtension-Info.plist
+        CODE_SIGN_ENTITLEMENTS: Config/UzTranslitShare.entitlements
+
+  UzTranslitAction:
+    type: app-extension
+    platform: iOS
+    sources:
+      - Sources/Shared
+      - Sources/Extensions
+      - Sources/ActionExtension
+      - Resources/Strings
+      - Resources/ActionExtension
+    dependencies:
+      - package: UzTranslitCore
+        products: [UzTranslitCore, UzTranslitKit]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: uz.jaybi.uztranslit.action
+        INFOPLIST_FILE: Config/ActionExtension-Info.plist
+        CODE_SIGN_ENTITLEMENTS: Config/UzTranslitAction.entitlements
+
+  UzTranslitMac:
+    type: application
+    platform: macOS
+    sources:
+      - Sources/Shared
+      - Sources/App
+      - Sources/MacApp
+      - Resources/Strings
+      - Resources/MacApp
+    dependencies:
+      - package: UzTranslitCore
+        products: [UzTranslitCore, UzTranslitKit]
+    settings:
+      base:
+        PRODUCT_NAME: UzTranslit
+        PRODUCT_BUNDLE_IDENTIFIER: uz.jaybi.uztranslit.mac
+        INFOPLIST_FILE: Config/MacApp-Info.plist
+        CODE_SIGN_ENTITLEMENTS: Config/UzTranslitMac.entitlements
+        ENABLE_HARDENED_RUNTIME: "YES"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+
+schemes:
+  UzTranslit:
+    build:
+      targets:
+        UzTranslit: all
+    run:
+      config: Debug
+    profile:
+      config: Release
+    archive:
+      config: Release
+  UzTranslitMac:
+    build:
+      targets:
+        UzTranslitMac: all
+    run:
+      config: Debug
+    profile:
+      config: Release
+    archive:
+      config: Release

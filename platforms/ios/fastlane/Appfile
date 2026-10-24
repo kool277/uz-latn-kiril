@@ -1,0 +1,5 @@
+# Placeholders: replace or set the environment variables before running fastlane (see README.md).
+app_identifier("uz.jaybi.uztranslit")       # the iOS app; extensions: uz.jaybi.uztranslit.share / .action
+team_id(ENV["DEVELOPMENT_TEAM"]) if ENV["DEVELOPMENT_TEAM"]   # Apple Developer team id, e.g. "ABCDE12345"
+# apple_id("you@example.com")               # only for actions that sign in with an Apple ID (not needed with the API key)
+# itc_team_id("123456789")                  # App Store Connect team id, when your Apple ID belongs to several teams
