@@ -20,6 +20,19 @@ SCRIPT_DIR = "python"
 IDENT = "uz.jaybi.uztranslit"
 
 
+
+class Oxt(zipfile.ZipFile):
+    """A zip whose bytes depend only on its content (fixed entry dates): a rebuild without changes changes nothing."""
+    def __init__(self, path):
+        super().__init__(path, "w", zipfile.ZIP_DEFLATED)
+
+    def writestr(self, name, data, *a, **k):
+        if isinstance(name, str):
+            name = zipfile.ZipInfo(name, date_time=(2026, 1, 1, 0, 0, 0))
+            name.compress_type = zipfile.ZIP_DEFLATED
+            name.external_attr = 0o644 << 16
+        super().writestr(name, data, *a, **k)
+
 def script_url(func):
     return "vnd.sun.star.script:%s|%s|%s$%s?language=Python&amp;location=user:uno_packages" % (OXT_NAME, SCRIPT_DIR, SCRIPT, func)
 
@@ -94,7 +107,7 @@ def build():
     glue = open(GLUE, encoding="utf-8").read()
     script = core + "\n\n" + glue
     out = os.path.join(OUT_DIR, OXT_NAME)
-    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
+    with Oxt(out) as z:
         z.writestr("META-INF/manifest.xml", manifest_xml())
         z.writestr("description.xml", description_xml())
         z.writestr("Addons.xcu", addons_xcu())
@@ -158,7 +171,7 @@ def build_basic():
     basic_src = open(os.path.join(ROOT, "libreoffice", "UzTranslitLO.bas"), encoding="utf-8").read()
     esc = basic_src.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     out = os.path.join(OUT_DIR, OXT_BASIC)
-    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
+    with Oxt(out) as z:
         z.writestr("META-INF/manifest.xml",
                    '<?xml version="1.0" encoding="UTF-8"?>\n'
                    '<manifest:manifest xmlns:manifest="http://openoffice.org/2001/manifest">\n'

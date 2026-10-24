@@ -10,7 +10,7 @@ One file: `office-vba/UzTranslit.bas`. Pure VBA, no references, no Unicode in th
    * Word: import into **Normal** (so it is available in every document) — select "Normal" in the project tree first.
    * Excel: import into **PERSONAL.XLSB** (create it once via *Record Macro ▸ Store in: Personal Macro Workbook*).
    * PowerPoint: import into a presentation or save as a `.ppam` add-in (File ▸ Save As ▸ PowerPoint Add-in).
-3. Close the editor. Press **Alt+F8**, run **`UzSelfTest`** — it must say *passed, 0 failed*.
+3. Close the editor. Press **Alt+F8**, run **`UzSelfTest`** — it must say *29 passed, 0 failed* (CI runs the same 29 checks in LibreOffice's VBA mode).
 4. Macro security: *File ▸ Options ▸ Trust Center ▸ Macro Settings* → "Disable all macros with notification" is enough; enable macros when prompted. For Office 97–2003: *Tools ▸ Macro ▸ Security ▸ Medium*.
 
 ## Use
@@ -28,6 +28,28 @@ Press **Alt+F8** and run one of:
 * **Excel**: converts the selected cells (text constants only; formulas and numbers are untouched, also when a single formula cell is selected). With a single cell selected you are asked whether to convert the whole sheet. Rich text in a cell (partly bold) keeps its runs: font, size, bold, italic, underline, colour, strikethrough, super/subscript (a theme colour becomes the same fixed colour). A cell stays text even if its converted value looks like a number, date or formula. Excel cannot undo a macro: save first. Formulas: `=UzConvert(A1,"lat","new")`, `=UzConvert(A1,"auto","cyr")`, `=UzDetect(A1)`.
 * **PowerPoint**: every slide, shape, group, table cell and notes page; each paragraph is converted as one string and split back over its runs (formatting kept).
 * URLs, e-mail addresses and @handles are left as they are everywhere (`UzOptNoSkipUrls = True` converts them too).
+
+## UzTranslit ribbon tab (Office 2007 and later)
+
+A **UzTranslit** tab with *Yangi lotin*, *Lotin 1995*, *Кирилл*, a menu of the six fixed directions and the self-test. Office cannot add a tab to a file by itself, and a VBA project can only be written by Office, so it takes one round trip:
+
+1. Import **both** `UzTranslit.bas` and `UzTranslitRibbon.bas` (the button handler) into a new, empty file, then **File ▸ Save As**:
+   * Word: *Word Macro-Enabled Template* → `UzTranslit.dotm`
+   * Excel: *Excel Add-in* → `UzTranslit.xlam`
+   * PowerPoint: save as `UzTranslit.pptm` first, then *PowerPoint Add-in* → `UzTranslit.ppam`
+2. Close Office and add the tab (Python 3, no packages needed):
+   ```
+   python3 tools/add_ribbon.py UzTranslit.dotm
+   ```
+   It adds `office-vba/ribbon/customUI.xml` (Office 2007), `customUI14.xml` (2010 and later) and the icons, and changes nothing else in the file. Running it again replaces the tab.
+3. Load it:
+   * Word: copy `UzTranslit.dotm` to the STARTUP folder (`%APPDATA%\Microsoft\Word\STARTUP`; on a Mac, Word ▸ Preferences ▸ File Locations ▸ Startup).
+   * Excel: *File ▸ Options ▸ Add-ins ▸ Manage: Excel Add-ins ▸ Go… ▸ Browse* → `UzTranslit.xlam`.
+   * PowerPoint: *File ▸ Options ▸ Add-ins ▸ Manage: PowerPoint Add-ins ▸ Go… ▸ Add New* → `UzTranslit.ppam`.
+
+If the tab does not appear, turn on *File ▸ Options ▸ Advanced ▸ General ▸ Show add-in user interface errors* and reopen: Office then names the problem. `tools/test_add_ribbon.py` checks the injection on Word, Excel and PowerPoint files and that every button has a handler; the tab itself is only visible in Office.
+
+Office 97–2003 have no ribbon: use the toolbar below.
 
 Put the macros on the Quick Access Toolbar: *File ▸ Options ▸ Quick Access Toolbar ▸ Choose commands from: Macros*. Office 97–2003: *Tools ▸ Customize ▸ Commands ▸ Macros* and drag to a toolbar.
 

@@ -2,7 +2,7 @@
 """Static checks for VBA modules that LibreOffice's VBA mode lets through. Real VBA compiles the whole module on the
 first call, so a single undeclared name in a Word-only macro would break every macro, UzConvert() included.
 
-usage: python3 tools/vba_lint.py FILE.bas...      (exit 1 on any finding)
+usage: python3 tools/vba_lint.py FILE.bas...      (exit 1 on any finding; modules given together share a file)
 
   * every identifier is declared (module level, parameters, Dim / Const / Static), names a procedure or label of the
     module, or is a VBA keyword, function or constant listed below; members after a dot are the host's business
@@ -118,7 +118,17 @@ def statements(code):
     return [s.strip() for s in re.split(r":(?!=)", code) if s.strip()]
 
 
-def lint(path):
+def public_procs(path):
+    """Public procedures of a module, which the other modules of the same file may call."""
+    names = set()
+    for _, code in logical_lines(open(path, "rb").read().decode("ascii", "replace")):
+        m = PROC.match(code)
+        if m and not code.lower().startswith(("private", "friend")):
+            names.add(m.group(2).lower())
+    return names
+
+
+def lint(path, others=frozenset()):
     raw = open(path, "rb").read()
     problems = []
     try:
@@ -147,7 +157,7 @@ def lint(path):
                 d = DECL.match(st)
                 if d and not st.lower().startswith(("option", "attribute")):
                     module.update(declared_names(re.sub(r"=.*$", "", d.group(1))))
-    known = set(VBA_WORDS) | module | set(procs)
+    known = set(VBA_WORDS) | module | set(procs) | set(others)
     for name, (kind, start, params, body) in procs.items():
         local = set(declared_names(params)) | {name}
         labels = set()
@@ -181,9 +191,10 @@ def lint(path):
 
 
 def main():
-    problems = []
-    for p in sys.argv[1:]:
-        problems += lint(p)
+    problems, paths = [], sys.argv[1:]
+    for p in paths:  # the modules given together go into one file: each may call the others' public procedures
+        others = set().union(*[public_procs(q) for q in paths if q != p]) if len(paths) > 1 else set()
+        problems += lint(p, others)
     for p in problems:
         print(p)
     print("%d problem(s)" % len(problems) if problems else "vba lint: clean")

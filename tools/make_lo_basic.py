@@ -303,8 +303,8 @@ def write_split_tsv(out_dir):
 
 
 def office_library():
-    """The whole MS-Office module (document macros included) as a library of its own, plus a module whose Run
-    compiles it: LibreOffice's VBA mode catches syntax errors in macros that only Office can run."""
+    """The MS-Office modules (document macros and ribbon callbacks included) as a library of their own, plus a module
+    whose Run compiles them: LibreOffice's VBA mode catches syntax errors in macros that only Office can run."""
     src = open(VBA, encoding="utf-8").read()
     src = re.sub(r"^Attribute VB_Name.*\n", "", src)
     src = src.replace("Option Explicit\n", "Option Explicit\nOption VBASupport 1\n", 1)
@@ -312,12 +312,16 @@ def office_library():
                        "Sub Run",
                        "    Dim f As Integer, s As String",
                        '    s = UzConvert("Shahar", "lat", "cyr")',
+                       '    If False Then UzRibbon_OnAction Nothing    \' compiles the ribbon module too',
                        "    f = FreeFile",
                        '    Open "%s" For Output As #f' % os.path.join(ROOT, "build", "lo-test", "office.txt"),
                        '    Print #f, "office module compiled: " & s',
+                       '    Print #f, "UzSelfTest: " & UzSelfTestResult()',
                        "    Close #f",
                        "End Sub", ""])
-    return {"UzTranslit": src, "UzCheck": check}
+    ribbon = open(os.path.join(ROOT, "office-vba", "UzTranslitRibbon.bas"), encoding="utf-8").read()
+    ribbon = re.sub(r"^Attribute VB_Name.*\n", "", ribbon).replace("Option Explicit\n", "Option Explicit\nOption VBASupport 1\n", 1)
+    return {"UzTranslit": src, "UzTranslitRibbon": ribbon, "UzCheck": check}
 
 
 XBA = ('<?xml version="1.0" encoding="UTF-8"?>\n'

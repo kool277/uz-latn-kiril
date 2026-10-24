@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!-- UzTranslit ribbon tab. Every button calls UzRibbon_OnAction (office-vba/UzTranslitRibbon.bas).
+     Put into a macro-enabled file with tools/add_ribbon.py. This file and customUI.xml differ only in the namespace. -->
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui">
+  <ribbon>
+    <tabs>
+      <tab id="uzTranslitTab" label="UzTranslit">
+        <group id="uzGroupAuto" label="Alifbo (avto)">
+          <button id="uzAutoToNew" label="Yangi lotin" size="large" image="to_new" onAction="UzRibbon_OnAction"
+                  screentip="Avto &#8594; Yangi lotin (&#214; &#286; &#350; &#199;)"
+                  supertip="Belgilangan matn yoki butun hujjat. Yozuv bir marta aniqlanadi; formatlash, havolalar va xatchoplar saqlanadi."/>
+          <button id="uzAutoToLat" label="Lotin 1995" size="large" image="to_lat" onAction="UzRibbon_OnAction"
+                  screentip="Avto &#8594; Lotin 1995 (O&#699; G&#699; sh ch)"
+                  supertip="Belgilangan matn yoki butun hujjat. Yozuv bir marta aniqlanadi; formatlash, havolalar va xatchoplar saqlanadi."/>
+          <button id="uzAutoToCyr" label="&#1050;&#1080;&#1088;&#1080;&#1083;&#1083;" size="large" image="to_cyr" onAction="UzRibbon_OnAction"
+                  screentip="Avto &#8594; &#1050;&#1080;&#1088;&#1080;&#1083;&#1083;"
+                  supertip="Belgilangan matn yoki butun hujjat. Yozuv bir marta aniqlanadi; formatlash, havolalar va xatchoplar saqlanadi."/>
+        </group>
+        <group id="uzGroupFixed" label="Aniq yo&#699;nalish">
+          <menu id="uzMenuFixed" label="Yo&#699;nalish" size="large" image="to_new">
+            <button id="uzLatToNew" label="Lotin 1995 &#8594; Yangi lotin" onAction="UzRibbon_OnAction"/>
+            <button id="uzNewToLat" label="Yangi lotin &#8594; Lotin 1995" onAction="UzRibbon_OnAction"/>
+            <menuSeparator id="uzSep1"/>
+            <button id="uzCyrToNew" label="&#1050;&#1080;&#1088;&#1080;&#1083;&#1083; &#8594; Yangi lotin" onAction="UzRibbon_OnAction"/>
+            <button id="uzCyrToLat" label="&#1050;&#1080;&#1088;&#1080;&#1083;&#1083; &#8594; Lotin 1995" onAction="UzRibbon_OnAction"/>
+            <menuSeparator id="uzSep2"/>
+            <button id="uzNewToCyr" label="Yangi lotin &#8594; &#1050;&#1080;&#1088;&#1080;&#1083;&#1083;" onAction="UzRibbon_OnAction"/>
+            <button id="uzLatToCyr" label="Lotin 1995 &#8594; &#1050;&#1080;&#1088;&#1080;&#1083;&#1083;" onAction="UzRibbon_OnAction"/>
+          </menu>
+        </group>
+        <group id="uzGroupHelp" label="Yordam">
+          <button id="uzSelfTest" label="O&#699;z-o&#699;zini tekshirish" size="large" image="self_test" onAction="UzRibbon_OnAction"
+                  screentip="UzSelfTest" supertip="Konvertorning ichki testlari: &#171;N passed, 0 failed&#187; chiqishi kerak."/>
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>

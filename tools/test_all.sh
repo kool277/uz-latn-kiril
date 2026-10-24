@@ -3,10 +3,14 @@
 set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 fail=0
+mkdir -p "$ROOT/build"
 echo "== Source hygiene (no invisible characters in code)"
 ( cd "$ROOT" && python3 tools/escape-invisible.py --check $(git ls-files '*.ts' '*.mjs' '*.js' '*.py' '*.bas' '*.html' '*.css' '*.yml' \
     '*.kt' '*.kts' '*.swift' '*.cpp' '*.hpp' '*.h' '*.xml' '*.xcu' | grep -v '^web/test/fixtures/') ) && echo "clean" || fail=1
 echo "== VBA lint (what the VBA editor would reject)"; python3 "$ROOT/tools/vba_lint.py" "$ROOT"/office-vba/*.bas || fail=1
+echo "== Office ribbon (tools/add_ribbon.py)"
+python3 "$ROOT/tools/test_add_ribbon.py" > "$ROOT/build/ribbon-test.log" 2>&1 || fail=1
+grep -v "^  ok" "$ROOT/build/ribbon-test.log"
 echo "== Differential corpus"; node "$ROOT/tools/make_differential.mjs" || fail=1
 echo "== JS core";      node "$ROOT/core/js/test.js" || fail=1
 echo "== Python core";  python3 "$ROOT/core/python/test_uztranslit.py" || fail=1
@@ -22,6 +26,7 @@ if command -v soffice >/dev/null 2>&1 && python3 -c "import uno" 2>/dev/null; th
   echo "== MS Office module, document macros included, compiles (LibreOffice VBA mode)"
   python3 "$ROOT/tools/lo_run_macro.py" UzOffice.UzCheck.Run "$ROOT/build/lo-test/office.txt" | tail -n +2
   grep -q "^office module compiled: " "$ROOT/build/lo-test/office.txt" 2>/dev/null || { echo "FAIL: the module did not compile"; fail=1; }
+  grep -q "^UzSelfTest: [0-9]* passed, 0 failed" "$ROOT/build/lo-test/office.txt" 2>/dev/null || { echo "FAIL: UzSelfTest"; fail=1; }
   echo "== LibreOffice extensions end to end (Writer, Calc, Impress; both editions)"
   python3 "$ROOT/tools/lo_extension_test.py" || fail=1
 else

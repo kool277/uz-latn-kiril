@@ -912,7 +912,14 @@ End Sub
 '  SELF-TEST (Alt+F8 -> UzSelfTest). Mirrors a sample of spec/fixtures.json.
 ' =====================================================================================
 Public Sub UzSelfTest()
-    Dim ok As Long, bad As Long, msg As String
+    Dim r As String
+    r = UzSelfTestResult()
+    MsgBox "UzTranslit self-test: " & r, IIf(InStr(r, ", 0 failed") > 0, vbInformation, vbExclamation), "UzTranslit"
+End Sub
+
+' "N passed, M failed" and the failures, one per line (CI runs this in LibreOffice's VBA mode)
+Public Function UzSelfTestResult() As String
+    Dim ok As Long, bad As Long, msg As String, pieces() As String, outs() As String
     UzInit
     T ok, bad, msg, UzConvert(U("040E 0437 0431 0435 043A 0438 0441 0442 043E 043D"), "cyr", "lat"), "O" & ChrW(&H2BB) & "zbekiston"
     T ok, bad, msg, UzConvert(U("040E 0437 0431 0435 043A 0438 0441 0442 043E 043D"), "cyr", "new"), U("00D6 007A 0062 0065 006B 0069 0073 0074 006F 006E")
@@ -942,8 +949,12 @@ Public Sub UzSelfTest()
     T ok, bad, msg, UzDetect(U("00D6 007A 0062 0065 006B 0069 0073 0074 006F 006E")), "new"
     T ok, bad, msg, UzDetect("O'zbekiston"), "lat"
     T ok, bad, msg, UzDetect(U("0421 0430 043B 043E 043C")), "cyr"
-    MsgBox "UzTranslit self-test: " & ok & " passed, " & bad & " failed" & IIf(bad > 0, vbCrLf & vbCrLf & msg, ""), IIf(bad > 0, vbExclamation, vbInformation), "UzTranslit"
-End Sub
+    ReDim pieces(1 To 2)                                   ' a word cut by formatting: bold "Sh" + plain "ahar"
+    pieces(1) = U("0428"): pieces(2) = U("0410 04B2 0410 0420")
+    UzSplitConvert pieces, outs, 1, 2, "cyr", "lat"
+    T ok, bad, msg, outs(1) & "|" & outs(2), "SH|AHAR"
+    UzSelfTestResult = ok & " passed, " & bad & " failed" & IIf(bad > 0, vbCrLf & vbCrLf & msg, "")
+End Function
 
 Private Sub T(ByRef ok As Long, ByRef bad As Long, ByRef msg As String, ByVal got As String, ByVal want As String)
     If got = want Then
