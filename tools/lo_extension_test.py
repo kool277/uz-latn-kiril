@@ -14,16 +14,20 @@ import time
 import uno
 from com.sun.star.beans import PropertyValue  # noqa: F401
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WORK = os.path.join(ROOT, "build", "lo-ext-test")
 BOLD, NORMAL = 150.0, 100.0
 EDITIONS = {
     "basic": ("uztranslit-libreoffice.oxt",
               "vnd.sun.star.script:UzTranslit.UzTranslitLO.UzLO_%s?language=Basic&location=application",
-              {"auto_to_lat": "AutoToLat", "lat_to_cyr": "LatToCyr", "auto_to_new": "AutoToNew"}),
+              {"auto_to_lat": "AutoToLat", "lat_to_cyr": "LatToCyr", "auto_to_new": "AutoToNew", "cyr_to_lat": "CyrToLat",
+               "settings_dialog": "SettingsDialog", "settings_save": "SettingsSave"}),
     "python": ("uztranslit-libreoffice-python.oxt",
                "vnd.sun.star.script:uztranslit-libreoffice-python.oxt|python|uztranslit_lo.py$%s?language=Python&location=user:uno_packages",
-               {"auto_to_lat": "auto_to_lat", "lat_to_cyr": "lat_to_cyr", "auto_to_new": "auto_to_new"}),
+               {"auto_to_lat": "auto_to_lat", "lat_to_cyr": "lat_to_cyr", "auto_to_new": "auto_to_new", "cyr_to_lat": "cyr_to_lat",
+                "settings_dialog": "settings_dialog", "settings_save": "settings_save"}),
 }
 
 failures = []
@@ -183,6 +187,56 @@ def writer_tests(desktop, macro):
     doc.close(True)
 
 
+def startup_tests(desktop, macro, edition_name):
+    """The menu, the toolbar and its icons are registered."""
+    ui = config(desktop, "/org.openoffice.Office.Addons/AddonUI")
+    menu = ui.getByName("OfficeMenuBar").getByName("uz.jaybi.uztranslit.menu").getByName("Submenu")
+    titles = [menu.getByName(n).Title for n in menu.getElementNames() if menu.getByName(n).URL != "private:separator"]
+    check("menu: 11 commands", len(titles), 11)
+    bar = ui.getByName("OfficeToolBar").getByName("uz.jaybi.uztranslit.toolbar")
+    check("toolbar: 4 buttons", len(bar.getElementNames()), 4)
+    images = [n for n in ui.getByName("Images").getElementNames() if n.startswith("uz.jaybi.uztranslit.image.")]
+    check("toolbar: 4 icons", len(images), 4)
+
+
+def config(desktop, path, update=False):
+    ctx = desktop_ctx[0]
+    cp = ctx.ServiceManager.createInstanceWithContext("com.sun.star.configuration.ConfigurationProvider", ctx)
+    arg = uno.createUnoStruct("com.sun.star.beans.PropertyValue")
+    arg.Name, arg.Value = "nodepath", path
+    kind = "ConfigurationUpdateAccess" if update else "ConfigurationAccess"
+    return cp.createInstanceWithArguments("com.sun.star.configuration." + kind, (arg,))
+
+
+desktop_ctx = [None]
+
+
+def settings_tests(desktop, macro):
+    """The settings dialog, filled and saved without being shown, changes the next run; then back to the defaults."""
+    doc = desktop.loadComponentFromURL("private:factory/swriter", "_blank", 0, ())
+    provider = doc.getScriptProvider()
+    dlg = provider.getScript(macro["settings_dialog"]).invoke((), (), ())[0]
+    names = ["Ascii", "Dictionary", "KeepHardSignAfterO", "TsFinal", "SkipUrls", "OK", "Cancel"]
+    check("settings: dialog has the five options and two buttons", [dlg.getControl(n) is not None for n in names], [True] * 7)
+    check("settings: defaults shown", [dlg.getControl(k).getModel().State for k in ("Ascii", "Dictionary", "SkipUrls")], [0, 1, 1])
+    dlg.getControl("Ascii").getModel().State = 1
+    provider.getScript(macro["settings_save"]).invoke((dlg,), (), ())
+    dlg.dispose()
+    check("settings: saved", config(desktop, "/uz.jaybi.UzTranslit/Settings").Ascii, True)
+    doc.getText().setString("Ўзбекистон")
+    run_macro(desktop, doc, macro["cyr_to_lat"])
+    check("settings: plain apostrophe used by the next run", doc.getText().getString(), "O'zbekiston")
+    dlg = provider.getScript(macro["settings_dialog"]).invoke((), (), ())[0]
+    check("settings: dialog shows the saved value", dlg.getControl("Ascii").getModel().State, 1)
+    dlg.getControl("Ascii").getModel().State = 0
+    provider.getScript(macro["settings_save"]).invoke((dlg,), (), ())
+    dlg.dispose()
+    doc.getText().setString("Ўзбекистон")
+    run_macro(desktop, doc, macro["cyr_to_lat"])
+    check("settings: back to ʻ", doc.getText().getString(), "Oʻzbekiston")
+    doc.close(True)
+
+
 def calc_tests(desktop, macro):
     doc = desktop.loadComponentFromURL("private:factory/scalc", "_blank", 0, ())
     sheet = doc.Sheets.getByIndex(0)
@@ -236,7 +290,13 @@ def edition(name, port):
     proc, ctx = start_office(profile, port)
     try:
         desktop = ctx.ServiceManager.createInstanceWithContext("com.sun.star.frame.Desktop", ctx)
-        for fn in (writer_tests, calc_tests, impress_tests):
+        desktop_ctx[0] = ctx
+        try:
+            startup_tests(desktop, macro, name)
+        except Exception as e:
+            failures.append("startup_tests: %s" % e)
+            print("  FAIL startup_tests raised %s" % getattr(e, "Message", e))
+        for fn in (writer_tests, calc_tests, impress_tests, settings_tests):
             try:
                 fn(desktop, macro)
             except Exception as e:  # a macro error is a failure, not a crash of the whole run
@@ -272,7 +332,7 @@ def split_tests():
         if c["from"] == "auto":
             continue
         o = c["options"]
-        mod.convert = lambda s, f, t: plain(s, f, t, o)  # _split converts through the module's global
+        mod._options[0] = o  # _split converts with the options of the run
         text, texts, i = c["in"], [], 0
         while i < len(text):
             k = rng.randint(1, 8)
@@ -296,11 +356,51 @@ def split_tests():
                 print("  FAIL %s->%s %r\n       want %r\n       got  %r" % (c["from"], c["to"], texts, want, got))
         if n >= 3000:
             break
-    mod.convert = plain
+    mod._options[0] = None
     if bad:
         failures.append("python split: %d of %d" % (bad, n))
     else:
         print("  ok   %d paragraphs" % n)
+
+
+def formula_tests(port):
+    """=UZCONVERT() and friends with UzTranslitLO.bas in My Macros ▸ Standard (docs/LIBREOFFICE_INSTALL.md, method B).
+    LibreOffice does not call Basic functions of an extension's library from a cell (#NAME?, or #VALUE! once loaded)."""
+    import make_lo_basic
+    work = os.path.join(WORK, "formulas")
+    shutil.rmtree(work, ignore_errors=True)
+    profile = os.path.join(work, "profile")
+    os.makedirs(profile)
+    subprocess.run(["soffice", "-env:UserInstallation=" + uno.systemPathToFileUrl(profile), "--headless", "--norestore", "--terminate_after_init"],
+                   check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=120)
+    make_lo_basic.install_into_profile(os.path.join(profile, "user", "basic"), {"Standard": {
+        "UzTranslitLO": open(os.path.join(ROOT, "libreoffice", "UzTranslitLO.bas"), encoding="utf-8").read()}})
+    print("== Calc formulas (UzTranslitLO.bas in My Macros)")
+    proc, ctx = start_office(profile, port)
+    try:
+        desktop = ctx.ServiceManager.createInstanceWithContext("com.sun.star.frame.Desktop", ctx)
+        doc = desktop.loadComponentFromURL("private:factory/scalc", "_blank", 0, ())
+        sheet = doc.Sheets.getByIndex(0)
+        sheet.getCellRangeByName("B1").setString("Toshkent shahri")
+        cells = {"A1": ('=UZCONVERT(B1;"lat";"new")', "Toşkent şahri"), "A2": ('=UZCONVERT("Шаҳар";"auto";"lat")', "Shahar"),
+                 "A3": ('=UZDETECT("Özbekiston")', "new"), "A4": ('=UZLATTOCYR(B1)', "Тошкент шаҳри")}
+        for k, (f, _) in cells.items():
+            sheet.getCellRangeByName(k).setFormula(f)
+        doc.calculateAll()
+        for k, (f, want) in cells.items():
+            check("calc formula " + f, sheet.getCellRangeByName(k).getString(), want)
+        doc.close(True)
+    except Exception as e:
+        failures.append("formula_tests: %s" % e)
+        print("  FAIL formula_tests raised %s" % getattr(e, "Message", e))
+    finally:
+        try:
+            desktop.terminate()
+        except Exception:
+            pass
+        time.sleep(1)
+        if proc.poll() is None:
+            proc.kill()
 
 
 def has_python_provider():
@@ -316,6 +416,8 @@ def main():
     names = ["basic", "python"] if which == "all" else [which]
     if "python" in names:
         split_tests()
+    if "basic" in names:
+        formula_tests(2089)
     for i, name in enumerate(names):
         if name == "python" and not has_python_provider():
             print("== python edition skipped: LibreOffice's Python script provider is not installed")

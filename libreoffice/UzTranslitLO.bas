@@ -1,4 +1,4 @@
-' ===== Generated from office-vba/UzTranslit.bas by tools/make_lo_basic.py — do not edit the engine here =====
+' ===== Generated from office-vba/UzTranslit.bas by tools/make_lo_basic.py -- do not edit the engine here =====
 Option Explicit
 Option VBASupport 1
 ' =====================================================================================
@@ -1025,6 +1025,7 @@ Private Sub UzLO_Run(ByVal f As String, ByVal t As String)
         Exit Sub
     End If
     mWriter = (kind = 1)
+    UzLO_LoadSettings
     ' one undo step for the whole run, and no layout after every change (that alone makes long paragraphs 30x slower);
     ' tracked changes would keep every old word next to its conversion, formulas need not recalculate per cell
     On Error Resume Next
@@ -1365,4 +1366,135 @@ Private Function UzLO_Draw(ByVal doc As Object, ByRef f As String, ByVal t As St
         On Error GoTo 0
     Next
     UzLO_Draw = cnt
+End Function
+
+' ---- settings: /uz.jaybi.UzTranslit/Settings, LibreOffice's configuration (UzTranslit.xcs in the extension) ----
+Private Function UzLO_Config(ByVal forUpdate As Boolean) As Object
+    Dim cp As Object, arg As New com.sun.star.beans.PropertyValue
+    Set cp = createUnoService("com.sun.star.configuration.ConfigurationProvider")
+    arg.Name = "nodepath": arg.Value = "/uz.jaybi.UzTranslit/Settings"
+    If forUpdate Then
+        Set UzLO_Config = cp.createInstanceWithArguments("com.sun.star.configuration.ConfigurationUpdateAccess", Array(arg))
+    Else
+        Set UzLO_Config = cp.createInstanceWithArguments("com.sun.star.configuration.ConfigurationAccess", Array(arg))
+    End If
+End Function
+
+' the saved settings become the engine's options (the defaults stay when the module runs without the extension)
+Public Sub UzLO_LoadSettings()
+    Dim c As Object
+    On Error GoTo none
+    Set c = UzLO_Config(False)
+    UzOptAscii = c.Ascii
+    UzOptNoDictionary = Not c.Dictionary
+    UzOptKeepHardSignAfterO = c.KeepHardSignAfterO
+    UzOptNoTsFinal = Not c.TsFinal
+    UzOptNoSkipUrls = Not c.SkipUrls
+none:
+End Sub
+
+Private Function UzLO_SettingKeys() As Variant
+    UzLO_SettingKeys = Array("Ascii", "Dictionary", "KeepHardSignAfterO", "TsFinal", "SkipUrls")
+End Function
+
+' "uz", "ru" or "en": LibreOffice's user interface language
+Private Function UzLO_Lang() As String
+    Dim cp As Object, arg As New com.sun.star.beans.PropertyValue, s As String
+    On Error GoTo done
+    Set cp = createUnoService("com.sun.star.configuration.ConfigurationProvider")
+    arg.Name = "nodepath": arg.Value = "/org.openoffice.Setup/L10N"
+    s = LCase(cp.createInstanceWithArguments("com.sun.star.configuration.ConfigurationAccess", Array(arg)).ooLocale)
+done:
+    If Left(s, 2) = "uz" Then
+        UzLO_Lang = "uz"
+    ElseIf Left(s, 2) = "ru" Then
+        UzLO_Lang = "ru"
+    Else
+        UzLO_Lang = "en"
+    End If
+End Function
+
+' the settings dialog with the saved values, not shown yet (tests fill and save it without showing it)
+Public Function UzLO_SettingsDialog() As Object
+    Dim dm As Object, dlg As Object, c As Object, keys As Variant, i As Integer, cfg As Object, lang As String
+    keys = UzLO_SettingKeys()
+    lang = UzLO_Lang()
+    Set dm = createUnoService("com.sun.star.awt.UnoControlDialogModel")
+    dm.Width = 250: dm.Height = 124: dm.Title = UzLO_Text(lang, "title")
+    For i = 0 To UBound(keys)
+        Set c = dm.createInstance("com.sun.star.awt.UnoControlCheckBoxModel")
+        c.PositionX = 8: c.PositionY = 8 + i * 16: c.Width = 234: c.Height = 12
+        c.Label = UzLO_Text(lang, keys(i))
+        dm.insertByName(keys(i), c)
+    Next
+    Set c = dm.createInstance("com.sun.star.awt.UnoControlButtonModel")
+    c.PositionX = 132: c.PositionY = 102: c.Width = 54: c.Height = 15: c.PushButtonType = 1: c.DefaultButton = True
+    c.Label = UzLO_Text(lang, "ok")
+    dm.insertByName("OK", c)
+    Set c = dm.createInstance("com.sun.star.awt.UnoControlButtonModel")
+    c.PositionX = 190: c.PositionY = 102: c.Width = 54: c.Height = 15: c.PushButtonType = 2
+    c.Label = UzLO_Text(lang, "cancel")
+    dm.insertByName("Cancel", c)
+    Set dlg = createUnoService("com.sun.star.awt.UnoControlDialog")
+    dlg.setModel(dm)
+    On Error Resume Next
+    Set cfg = UzLO_Config(False)
+    For i = 0 To UBound(keys)
+        If cfg.getByName(keys(i)) Then dlg.getControl(keys(i)).State = 1 Else dlg.getControl(keys(i)).State = 0
+    Next
+    Set UzLO_SettingsDialog = dlg
+End Function
+
+Public Sub UzLO_SettingsSave(dlg As Object)
+    Dim cfg As Object, keys As Variant, i As Integer
+    keys = UzLO_SettingKeys()
+    Set cfg = UzLO_Config(True)
+    For i = 0 To UBound(keys)
+        cfg.replaceByName(keys(i), dlg.getControl(keys(i)).State = 1)
+    Next
+    cfg.commitChanges()
+    UzLO_LoadSettings
+End Sub
+
+' Tools > UzTranslit > Settings...
+Public Sub UzLO_Settings()
+    Dim dlg As Object
+    Set dlg = UzLO_SettingsDialog()
+    dlg.createPeer(createUnoService("com.sun.star.awt.Toolkit"), Null)
+    If dlg.execute() = 1 Then UzLO_SettingsSave dlg
+    dlg.dispose()
+End Sub
+
+' the dialog's texts in three languages (generated by tools/make_lo_basic.py)
+Private Function UzLO_Text(ByVal lang As String, ByVal key As String) As String
+    Dim s As String
+    UzInit
+    Select Case lang & "|" & key
+        Case "en|title": s = "UzTranslit settings"
+        Case "uz|title": s = "UzTranslit sozlamalari"
+        Case "ru|title": s = U("041D 0430 0441 0442 0440 043E 0439 043A 0438") & " UzTranslit"
+        Case "en|Ascii": s = "Plain apostrophe (') instead of " & U("02BB") & " and " & U("02BC")
+        Case "uz|Ascii": s = "Oddiy apostrof (') " & U("2014") & " " & U("02BB") & " va " & U("02BC") & " o" & U("02BB") & "rniga"
+        Case "ru|Ascii": s = U("041F 0440 043E 0441 0442 043E 0439") & " " & U("0430 043F 043E 0441 0442 0440 043E 0444") & " (') " & U("0432 043C 0435 0441 0442 043E") & " " & U("02BB") & " " & U("0438") & " " & U("02BC")
+        Case "en|Dictionary": s = "Loanword dictionary (obyekt " & U("2192") & " " & U("043E 0431 044A 0435 043A 0442") & ", kompyuter " & U("2192") & " " & U("043A 043E 043C 043F 044C 044E 0442 0435 0440") & ")"
+        Case "uz|Dictionary": s = "O" & U("02BB") & "zlashma so" & U("02BB") & "zlar lug" & U("02BB") & "ati (obyekt " & U("2192") & " " & U("043E 0431 044A 0435 043A 0442") & ", kompyuter " & U("2192") & " " & U("043A 043E 043C 043F 044C 044E 0442 0435 0440") & ")"
+        Case "ru|Dictionary": s = U("0421 043B 043E 0432 0430 0440 044C") & " " & U("0437 0430 0438 043C 0441 0442 0432 043E 0432 0430 043D 0438 0439") & " (obyekt " & U("2192") & " " & U("043E 0431 044A 0435 043A 0442") & ", kompyuter " & U("2192") & " " & U("043A 043E 043C 043F 044C 044E 0442 0435 0440") & ")"
+        Case "en|KeepHardSignAfterO": s = "Keep " & U("044A") & " after " & U("045E") & " as " & U("02BC") & " (" & U("043C 045E 044A 0436 0438 0437 0430") & " " & U("2192") & " mo" & U("02BB 02BC") & "jiza)"
+        Case "uz|KeepHardSignAfterO": s = U("045E") & " dan keyingi " & U("044A") & " " & U("02BC") & " bo" & U("02BB") & "lib qolsin (" & U("043C 045E 044A 0436 0438 0437 0430") & " " & U("2192") & " mo" & U("02BB 02BC") & "jiza)"
+        Case "ru|KeepHardSignAfterO": s = U("0421 043E 0445 0440 0430 043D 044F 0442 044C") & " " & U("044A") & " " & U("043F 043E 0441 043B 0435") & " " & U("045E") & " " & U("043A 0430 043A") & " " & U("02BC") & " (" & U("043C 045E 044A 0436 0438 0437 0430") & " " & U("2192") & " mo" & U("02BB 02BC") & "jiza)"
+        Case "en|TsFinal": s = "Word-final ts becomes " & U("0446") & " (Latin to Cyrillic)"
+        Case "uz|TsFinal": s = "So" & U("02BB") & "z oxiridagi ts " & U("2192") & " " & U("0446") & " (lotindan kirillga)"
+        Case "ru|TsFinal": s = "ts " & U("0432") & " " & U("043A 043E 043D 0446 0435") & " " & U("0441 043B 043E 0432 0430") & " " & U("2192") & " " & U("0446") & " (" & U("0438 0437") & " " & U("043B 0430 0442 0438 043D 0438 0446 044B") & " " & U("0432") & " " & U("043A 0438 0440 0438 043B 043B 0438 0446 0443") & ")"
+        Case "en|SkipUrls": s = "Leave web addresses and e-mail addresses as they are"
+        Case "uz|SkipUrls": s = "Sayt va e-pochta manzillari o" & U("02BB") & "zgarmasin"
+        Case "ru|SkipUrls": s = U("041D 0435") & " " & U("043C 0435 043D 044F 0442 044C") & " " & U("0430 0434 0440 0435 0441 0430") & " " & U("0441 0430 0439 0442 043E 0432") & " " & U("0438") & " " & U("044D 043B 0435 043A 0442 0440 043E 043D 043D 043E 0439") & " " & U("043F 043E 0447 0442 044B")
+        Case "en|ok": s = "OK"
+        Case "uz|ok": s = "OK"
+        Case "ru|ok": s = "OK"
+        Case "en|cancel": s = "Cancel"
+        Case "uz|cancel": s = "Bekor qilish"
+        Case "ru|cancel": s = U("041E 0442 043C 0435 043D 0430")
+    End Select
+    If s = "" And lang <> "en" Then s = UzLO_Text("en", key)
+    UzLO_Text = s
 End Function

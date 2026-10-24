@@ -6,8 +6,10 @@ Two ways to install — pick one.
 
 1. **Tools ▸ Extension Manager ▸ Add…** → choose `uztranslit-libreoffice.oxt` → restart LibreOffice.
    Command line: `unopkg add uztranslit-libreoffice.oxt` (add `--shared` for all users).
-2. A **Tools ▸ UzTranslit** menu appears in Writer, Calc, Impress and Draw:
-   *Avto → Yangi lotin (Ö Ğ Ş Ç)*, *Avto → Lotin 1995*, *Avto → Кирилл*, the six fixed directions, and *Self-test*.
+2. A **Tools ▸ UzTranslit** menu appears in Writer, Calc, Impress and Draw, in Uzbek, Russian or English after
+   LibreOffice's interface language: *Avto → Yangi lotin (Ö Ğ Ş Ç)*, *Avto → Lotin 1995*, *Avto → Кирилл*, the six fixed
+   directions, *Sozlamalar…* (settings) and *Self-test*. The three *Avto* commands and the self-test are also on the
+   **UzTranslit toolbar** (*View ▸ Toolbars ▸ Add-on 1* if it is not shown).
 3. The selection is converted; with nothing selected, the whole document (Writer: body, tables, text frames, footnotes, endnotes, comments, headers/footers; Calc: selected cells or the whole used area, cell comments; Impress/Draw: all shapes, groups, tables, notes).
 
 What a run keeps:
@@ -26,13 +28,21 @@ This edition is written in LibreOffice Basic (the same engine as the Office VBA 
 
 1. **Tools ▸ Macros ▸ Edit Macros** → in the Basic IDE select *My Macros ▸ Standard* → **Tools ▸ Import BASIC…** → `UzTranslitLO.bas`.
 2. Run via **Tools ▸ Macros ▸ Run Macro ▸ My Macros ▸ Standard ▸ UzTranslitLO ▸ `UzLO_AutoToNew`** (etc.), or assign to a toolbar/shortcut (*Tools ▸ Customize*).
-3. Calc formulas work with this method:
-   `=UZCONVERT(A1;"lat";"new")`, `=UZCONVERT(A1;"auto";"cyr")`, `=UZDETECT(A1)`, `=UZLATTONEW(A1)`.
-   (Formulas cannot see the library inside the extension until it is loaded; importing the module into *My Macros* avoids that.)
+3. **Calc formulas need this method**: `=UZCONVERT(A1;"lat";"new")`, `=UZCONVERT(A1;"auto";"cyr")`, `=UZDETECT(A1)`,
+   `=UZLATTONEW(A1)`, `=UZLATTOCYR(A1)`… LibreOffice does not call Basic functions of an extension's library from a
+   cell (`#NAME?`, and `#VALUE!` once the library is loaded; checked with LibreOffice 24.2), so the extension's own
+   library cannot serve them, while the same module in *My Macros ▸ Standard* can (`tools/lo_extension_test.py`
+   checks four formulas that way). Both can be installed side by side.
 
-## Options
+## Settings
 
-Set in the Basic IDE or your own macro: `UzOptAscii`, `UzOptKeepHardSignAfterO`, `UzOptNoTsFinal`, `UzOptNoDictionary`, `UzOptNoSkipUrls` (also convert URLs and e-mail addresses), `UzAddDictionary "stem", "стем"` — same as the Office module.
+**Tools ▸ UzTranslit ▸ Sozlamalar…** (Settings): plain apostrophe `'` instead of ʻ ʼ, the loanword dictionary,
+ъ after ў, word-final *ts* → ц, leaving web and e-mail addresses alone. They are kept in LibreOffice's configuration
+(`/uz.jaybi.UzTranslit/Settings`, defined by `UzTranslit.xcs` in the extension) and every run reads them. Both
+editions share them; they have the same identifier, so installing one replaces the other. (A page in Tools ▸ Options
+would need a compiled UNO component, which a Basic extension cannot have, so the dialog lives in the menu.)
+
+The macro module without the extension uses the defaults; set the options in the Basic IDE or your own macro: `UzOptAscii`, `UzOptKeepHardSignAfterO`, `UzOptNoTsFinal`, `UzOptNoDictionary`, `UzOptNoSkipUrls` (also convert URLs and e-mail addresses), `UzAddDictionary "stem", "стем"` — same as the Office module.
 
 Unattended runs (scripts, tests): start soffice with `UZT_QUIET=1` in its environment and no message boxes are shown.
 

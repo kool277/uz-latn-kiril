@@ -41,6 +41,38 @@ def _msg(doc, text, kind=INFOBOX, buttons=BUTTONS_OK):
         return 0
 
 
+# the options of the current run: /uz.jaybi.UzTranslit/Settings (UzTranslit.xcs in the extension), read by _run()
+_options = [None]
+SETTING_KEYS = ("Ascii", "Dictionary", "KeepHardSignAfterO", "TsFinal", "SkipUrls")
+
+
+def _conv(s, f, t):
+    return convert(s, f, t, _options[0])
+
+
+def _config(update=False):
+    ctx = uno.getComponentContext()
+    cp = ctx.ServiceManager.createInstanceWithContext("com.sun.star.configuration.ConfigurationProvider", ctx)
+    arg = uno.createUnoStruct("com.sun.star.beans.PropertyValue")
+    arg.Name, arg.Value = "nodepath", "/uz.jaybi.UzTranslit/Settings"
+    kind = "ConfigurationUpdateAccess" if update else "ConfigurationAccess"
+    return cp.createInstanceWithArguments("com.sun.star.configuration." + kind, (arg,))
+
+
+def _load_settings():
+    """The saved settings as engine options (the defaults when they cannot be read)."""
+    try:
+        c = _config()
+        o = {"dictionary": bool(c.Dictionary), "dropHardSignAfterO": not c.KeepHardSignAfterO,
+             "tsFinal": bool(c.TsFinal), "skipUrls": bool(c.SkipUrls)}
+        if c.Ascii:
+            o["okina"] = o["tutuq"] = "'"
+        _options[0] = o
+    except Exception:
+        _options[0] = None
+    return _options[0]
+
+
 def _resolve(f, sample):
     """'auto' becomes the script of the text this run converts: one decision for the whole run."""
     return detect(sample[:200000]) if f == "auto" else f
@@ -74,7 +106,7 @@ def _split(texts, f, t):
     src = "".join(texts)
     if f == "auto":
         f = detect(src)
-    out = convert(src, f, t)
+    out = _conv(src, f, t)
     if out == src:
         return None
     pieces, prev, b, safe, safe_len = [], 0, 0, 0, 0
@@ -87,9 +119,9 @@ def _split(texts, f, t):
             while w > safe and not _SPACE.match(src, w - 1):
                 w -= 1
             if w > safe:
-                safe_len += len(convert(src[safe:w], f, t))
+                safe_len += len(_conv(src[safe:w], f, t))
                 safe = w
-            cur = min(safe_len + (len(convert(src[safe:b], f, t)) if b > safe else 0), len(out))
+            cur = min(safe_len + (len(_conv(src[safe:b], f, t)) if b > safe else 0), len(out))
         cur = max(cur, prev)
         pieces.append(out[prev:cur])
         prev = cur
@@ -130,7 +162,7 @@ def _annotation(por, f, t):
         fld = por.TextField
         s = fld.Content
         if s:
-            conv = convert(s, f, t)
+            conv = _conv(s, f, t)
             if conv != s:
                 fld.Content = conv
                 return 1
@@ -237,7 +269,7 @@ def _comments(rng, f, t):
             p = a.getPosition()
             if a_.StartColumn <= p.Column <= a_.EndColumn and a_.StartRow <= p.Row <= a_.EndRow:
                 s = a.getString()
-                conv = convert(s, f, t)
+                conv = _conv(s, f, t)
                 if conv != s:
                     a.setString(conv)
                     cnt += 1
@@ -326,6 +358,7 @@ def _run(f, t):
         _msg(doc, "Unsupported document type", WARNINGBOX)
         return
     _writer_text[0] = kind == "writer"
+    _load_settings()
     # one undo step for the whole run, and no layout after every change (that alone makes long paragraphs 30x
     # slower); tracked changes would keep every old word next to its conversion, formulas need not recalculate per cell
     um = doc.getUndoManager()
@@ -360,6 +393,81 @@ def auto_to_lat(*a): _run("auto", "lat")
 def auto_to_cyr(*a): _run("auto", "cyr")
 
 
+_TEXTS = {
+    "title": {"en": "UzTranslit settings", "uz": "UzTranslit sozlamalari", "ru": "Настройки UzTranslit"},
+    "Ascii": {"en": "Plain apostrophe (') instead of ʻ and ʼ", "uz": "Oddiy apostrof (') — ʻ va ʼ oʻrniga",
+              "ru": "Простой апостроф (') вместо ʻ и ʼ"},
+    "Dictionary": {"en": "Loanword dictionary (obyekt → объект, kompyuter → компьютер)",
+                   "uz": "Oʻzlashma soʻzlar lugʻati (obyekt → объект, kompyuter → компьютер)",
+                   "ru": "Словарь заимствований (obyekt → объект, kompyuter → компьютер)"},
+    "KeepHardSignAfterO": {"en": "Keep ъ after ў as ʼ (мўъжиза → moʻʼjiza)", "uz": "ў dan keyingi ъ ʼ boʻlib qolsin (мўъжиза → moʻʼjiza)",
+                           "ru": "Сохранять ъ после ў как ʼ (мўъжиза → moʻʼjiza)"},
+    "TsFinal": {"en": "Word-final ts becomes ц (Latin to Cyrillic)", "uz": "Soʻz oxiridagi ts → ц (lotindan kirillga)",
+                "ru": "ts в конце слова → ц (из латиницы в кириллицу)"},
+    "SkipUrls": {"en": "Leave web addresses and e-mail addresses as they are", "uz": "Sayt va e-pochta manzillari oʻzgarmasin",
+                 "ru": "Не менять адреса сайтов и электронной почты"},
+    "ok": {"en": "OK", "uz": "OK", "ru": "OK"},
+    "cancel": {"en": "Cancel", "uz": "Bekor qilish", "ru": "Отмена"},
+}
+
+
+def _lang():
+    try:
+        ctx = uno.getComponentContext()
+        cp = ctx.ServiceManager.createInstanceWithContext("com.sun.star.configuration.ConfigurationProvider", ctx)
+        arg = uno.createUnoStruct("com.sun.star.beans.PropertyValue")
+        arg.Name, arg.Value = "nodepath", "/org.openoffice.Setup/L10N"
+        loc = cp.createInstanceWithArguments("com.sun.star.configuration.ConfigurationAccess", (arg,)).ooLocale.lower()
+    except Exception:
+        loc = ""
+    return "uz" if loc.startswith("uz") else "ru" if loc.startswith("ru") else "en"
+
+
+def settings_dialog(*a):
+    """The settings dialog with the saved values, not shown yet (tests fill and save it without showing it)."""
+    ctx = uno.getComponentContext()
+    smgr, lang = ctx.ServiceManager, _lang()
+    dm = smgr.createInstanceWithContext("com.sun.star.awt.UnoControlDialogModel", ctx)
+    dm.Width, dm.Height, dm.Title = 250, 124, _TEXTS["title"][lang]
+    for i, k in enumerate(SETTING_KEYS):
+        c = dm.createInstance("com.sun.star.awt.UnoControlCheckBoxModel")
+        c.PositionX, c.PositionY, c.Width, c.Height, c.Label = 8, 8 + i * 16, 234, 12, _TEXTS[k][lang]
+        dm.insertByName(k, c)
+    for name, x, kind in (("OK", 132, 1), ("Cancel", 190, 2)):
+        c = dm.createInstance("com.sun.star.awt.UnoControlButtonModel")
+        c.PositionX, c.PositionY, c.Width, c.Height = x, 102, 54, 15
+        c.PushButtonType = kind  # com.sun.star.awt.PushButtonType OK / CANCEL
+        c.Label = _TEXTS[name.lower()][lang]
+        dm.insertByName(name, c)
+    dlg = smgr.createInstanceWithContext("com.sun.star.awt.UnoControlDialog", ctx)
+    dlg.setModel(dm)
+    try:
+        cfg = _config()
+        for k in SETTING_KEYS:
+            dlg.getControl(k).getModel().State = 1 if cfg.getByName(k) else 0
+    except Exception:
+        pass
+    return dlg
+
+
+def settings_save(dlg, *a):
+    cfg = _config(update=True)
+    for k in SETTING_KEYS:
+        cfg.replaceByName(k, dlg.getControl(k).getModel().State == 1)
+    cfg.commitChanges()
+    _load_settings()
+
+
+def settings(*a):
+    """Tools ▸ UzTranslit ▸ Settings…"""
+    ctx = uno.getComponentContext()
+    dlg = settings_dialog()
+    dlg.createPeer(ctx.ServiceManager.createInstanceWithContext("com.sun.star.awt.Toolkit", ctx), None)
+    if dlg.execute() == 1:
+        settings_save(dlg)
+    dlg.dispose()
+
+
 def self_test(*a):
     doc = XSCRIPTCONTEXT.getDocument()  # noqa: F821
     checks = [
@@ -374,4 +482,4 @@ def self_test(*a):
 
 
 g_exportedScripts = (cyr_to_lat, cyr_to_new, lat_to_cyr, new_to_cyr, lat_to_new, new_to_lat,
-                     auto_to_new, auto_to_lat, auto_to_cyr, self_test)
+                     auto_to_new, auto_to_lat, auto_to_cyr, self_test, settings, settings_dialog, settings_save)
