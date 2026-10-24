@@ -1,0 +1,37 @@
+<header class="top">
+  <h1><span class="accent">Lotin</span> · Kirill · Yangi lotin</h1>
+  <p class="sub">{{ i18n.t('app.subtitle') }}</p>
+  <span class="spacer"></span>
+  <span class="engine" [title]="i18n.t('engine.title')" data-testid="engine">{{ engineLabel() }}</span>
+  <button type="button" class="btn small" (click)="toggleLang()" [attr.aria-label]="i18n.t('app.langLabel')">{{ i18n.t('app.lang') }}</button>
+  <button type="button" class="btn icon" (click)="toggleTheme()" [attr.aria-label]="i18n.t('app.theme')" [title]="i18n.t('app.theme')">◐</button>
+</header>
+
+<main>
+  <app-direction-bar />
+
+  <div class="tabs seg" role="tablist" [attr.aria-label]="i18n.t('tab.label')" (keydown)="tabKey($event)">
+    <button type="button" role="tab" id="tab-text" aria-controls="panel-text" [attr.aria-selected]="tab() === 'text'"
+            [attr.tabindex]="tab() === 'text' ? 0 : -1" (click)="select('text')">{{ i18n.t('tab.text') }}</button>
+    <button type="button" role="tab" id="tab-files" aria-controls="panel-files" [attr.aria-selected]="tab() === 'files'"
+            [attr.tabindex]="tab() === 'files' ? 0 : -1" (click)="select('files')">{{ i18n.t('tab.files') }}</button>
+  </div>
+
+  <!-- both panels stay alive so a running batch keeps its state while the text tab is shown -->
+  <section id="panel-text" role="tabpanel" aria-labelledby="tab-text" [hidden]="tab() !== 'text'">
+    <app-text-converter />
+  </section>
+  <section id="panel-files" role="tabpanel" aria-labelledby="tab-files" [hidden]="tab() !== 'files'">
+    <app-file-converter />
+  </section>
+
+  <app-alphabet-info />
+  <app-downloads-panel />
+</main>
+
+<footer>
+  latin.jaybi.uz · <a [href]="repo" rel="noopener" target="_blank">{{ i18n.t('footer.source') }}</a> · MIT · uztranslit v{{ version }}
+  <br>{{ i18n.t('footer.privacy') }}
+</footer>
+
+<div class="toast" [class.show]="toast.message()" role="status" aria-live="polite">{{ toast.message() }}</div>

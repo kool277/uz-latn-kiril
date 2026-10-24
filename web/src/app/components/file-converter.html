@@ -1,0 +1,59 @@
+<div class="drop card" [class.over]="over()" (dragover)="onDragOver($event)" (dragleave)="over.set(false)" (drop)="onDrop($event)"
+     data-testid="dropzone">
+  <div class="drop-icon" aria-hidden="true">⇪</div>
+  <p class="drop-title">{{ i18n.t('files.drop') }}</p>
+  <p class="muted or">{{ i18n.t('files.or') }}</p>
+  <button type="button" class="btn primary" (click)="picker.click()">{{ i18n.t('files.choose') }}</button>
+  <input #picker type="file" multiple [accept]="accept" class="visually-hidden" tabindex="-1" aria-hidden="true"
+         data-testid="file-input" (change)="onPick($event)">
+  <p class="muted small">{{ i18n.t('files.formats') }}</p>
+  <p class="muted small">{{ i18n.t('files.privacy') }} {{ i18n.t('files.limit', { size: maxMb }) }}</p>
+</div>
+
+@if (jobs.jobs().length) {
+  <div class="toolbar">
+    <span class="muted" aria-live="polite">{{ summary() }}</span>
+    <span class="spacer"></span>
+    @if (jobs.stale()) {
+      <button type="button" class="btn small" (click)="jobs.reconvertAll()">{{ i18n.t('files.reconvert') }}</button>
+    }
+    <button type="button" class="btn small primary" data-testid="download-all" [disabled]="!jobs.done().length || jobs.zipping()"
+            (click)="jobs.downloadAll()">{{ i18n.t('files.downloadAll') }}</button>
+    <button type="button" class="btn small" (click)="jobs.clear()">{{ i18n.t('files.clear') }}</button>
+  </div>
+  <ul class="list" [attr.aria-label]="i18n.t('files.list')">
+    @for (j of jobs.jobs(); track j.id) {
+      <li class="item card" [attr.data-status]="j.status()" data-testid="file-item">
+        <span class="badge" aria-hidden="true">{{ ext(j.file.name) }}</span>
+        <div class="info">
+          <div class="name" [title]="j.file.name">{{ j.file.name }}</div>
+          <div class="meta muted">
+            {{ size(j.file.size) }} · <span class="st" data-testid="file-status">{{ i18n.t('status.' + j.status()) }}</span>
+            @if (j.outcome(); as o) {
+              · {{ i18n.t('files.from', { from: name(o.from), to: name(o.to) }) }}
+              @if (o.stats) { · {{ i18n.t('files.changed', { changed: o.stats.changed }) }} }
+            }
+          </div>
+          @if (j.status() === 'running' || j.status() === 'queued') {
+            <progress max="1" [attr.value]="percent(j)" [attr.aria-label]="i18n.t('status.running')"></progress>
+          }
+          @if (j.error(); as e) {
+            @if (e.code !== 'err.cancelled') { <div class="msg err">{{ i18n.t(e.code, { detail: e.detail }) }}</div> }
+          }
+          @for (w of j.outcome()?.warnings ?? []; track w) { <div class="msg warn">{{ i18n.t(w) }}</div> }
+        </div>
+        <div class="actions">
+          @switch (j.status()) {
+            @case ('done') {
+              <button type="button" class="btn small primary" data-testid="download" (click)="jobs.download(j)">{{ i18n.t('files.download') }}</button>
+            }
+            @case ('error') { <button type="button" class="btn small" (click)="jobs.start(j)">{{ i18n.t('files.retry') }}</button> }
+            @case ('cancelled') { <button type="button" class="btn small" (click)="jobs.start(j)">{{ i18n.t('files.retry') }}</button> }
+            @default { <button type="button" class="btn small" (click)="jobs.cancel(j)">{{ i18n.t('files.cancel') }}</button> }
+          }
+          <button type="button" class="btn small ghost" (click)="jobs.remove(j)" [attr.aria-label]="i18n.t('files.remove') + ': ' + j.file.name">✕</button>
+        </div>
+      </li>
+    }
+  </ul>
+}

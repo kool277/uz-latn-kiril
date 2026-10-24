@@ -1,0 +1,27 @@
+<div class="bar" role="group" [attr.aria-label]="i18n.t('dir.label')">
+  <span class="seg" role="radiogroup" [attr.aria-label]="i18n.t('dir.from')"
+        (keydown)="keyFrom($event)">
+    @for (v of sources; track v) {
+      <button type="button" role="radio" [attr.data-v]="v" [attr.aria-checked]="s.from() === v"
+              [attr.tabindex]="s.from() === v ? 0 : -1" (click)="s.from.set(v)">{{ i18n.t('script.' + v) }}</button>
+    }
+  </span>
+  <button type="button" class="btn icon" (click)="s.swap(detected())" [attr.aria-label]="i18n.t('dir.swap')" [title]="i18n.t('dir.swap')">⇄</button>
+  <span class="seg" role="radiogroup" [attr.aria-label]="i18n.t('dir.to')"
+        (keydown)="keyTo($event)">
+    @for (v of targets; track v) {
+      <button type="button" role="radio" [attr.data-v]="v" [attr.aria-checked]="s.to() === v"
+              [attr.tabindex]="s.to() === v ? 0 : -1" (click)="s.to.set(v)">{{ i18n.t('script.' + v) }}</button>
+    }
+  </span>
+  <label class="chk"><input type="checkbox" [checked]="s.ascii()" (change)="s.ascii.set($any($event.target).checked)"> {{ i18n.t('opt.ascii') }}</label>
+  <label class="chk"><input type="checkbox" [checked]="s.skipUrls()" (change)="s.skipUrls.set($any($event.target).checked)"> {{ i18n.t('opt.urls') }}</label>
+  <details class="more">
+    <summary>{{ i18n.t('opt.more') }}</summary>
+    <div class="more-body">
+      <label class="chk"><input type="checkbox" [checked]="s.dictionary()" (change)="s.dictionary.set($any($event.target).checked)"> {{ i18n.t('opt.dictionary') }}</label>
+      <label class="chk"><input type="checkbox" [checked]="s.dropHardSignAfterO()" (change)="s.dropHardSignAfterO.set($any($event.target).checked)"> {{ i18n.t('opt.dropHard') }}</label>
+      <label class="chk"><input type="checkbox" [checked]="s.tsFinal()" (change)="s.tsFinal.set($any($event.target).checked)"> {{ i18n.t('opt.tsFinal') }}</label>
+    </div>
+  </details>
+</div>

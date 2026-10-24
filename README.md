@@ -12,7 +12,8 @@ All six directions, with the rules that matter: е/э, ц → s/ts, ъ/ь, йў 
 | Specification + 212-case conformance corpus | `spec/` | source of truth |
 | JavaScript core (browser/Node, UMD) | `core/js/uztranslit.js` | 212/212 ✔ |
 | Python core + CLI | `core/python/uztranslit.py` | 212/212 ✔ |
-| Web app for **https://latin.jaybi.uz** (GitHub Pages, PWA, offline) | `web/` | ready to push |
+| WebAssembly core (AssemblyScript) + the same engine as plain JS (wasm2js) | `core/wasm/` | 212/212 ✔ both, 0 differences vs the JS core on 80,000 random texts |
+| Web app for **https://latin.jaybi.uz** — Angular 22, WebAssembly on every CPU core, text **and documents**, PWA/offline | `web/` | 212/212 ✔ both engines · 498 engine tests · 10 Playwright tests |
 | MS Office macro module (Word/Excel/PowerPoint 97 → 2026, VBA 5–7) | `office-vba/UzTranslit.bas` | engine executed in LibreOffice Basic VBA mode: 210/210 ✔ |
 | LibreOffice extension (menu Tools ▸ UzTranslit) | `libreoffice/uztranslit-libreoffice.oxt` | installed + e2e-tested in Writer/Calc/Impress ✔ |
 | LibreOffice Basic module / Python edition | `libreoffice/UzTranslitLO.bas`, `uztranslit-libreoffice-python.oxt` | ✔ / needs Python provider |
@@ -35,11 +36,36 @@ U.convert('Özbekiston', 'auto', 'cyr');               // "Ўзбекистон"
 U.detect('Toşkent');                                  // "new"
 ```
 
-## Deploy the web app to latin.jaybi.uz
+## Web app (latin.jaybi.uz)
 
-1. Push the contents of `web/` to the branch/folder your GitHub Pages site is built from (the `CNAME` file already contains `latin.jaybi.uz`).
-2. DNS: `latin` → CNAME → `<your-user>.github.io`. In the repo's *Settings ▸ Pages* set the custom domain and tick *Enforce HTTPS* once the certificate is issued.
-3. Everything runs client-side; the service worker makes it work offline.
+Type or paste text — or drop files. Everything runs in the browser: the WebAssembly engine runs in a pool of
+Web Workers (one per CPU core, up to 8), so nothing is uploaded and large batches use the whole machine.
+
+| Files | What changes | What stays exactly as it was |
+|---|---|---|
+| Word, Excel, PowerPoint (docx/xlsx/pptx, macro and template variants) | text runs, footnotes, headers/footers, comments, text boxes, SmartArt, chart labels, alt text, embedded workbooks, spell-check language (uz-Cyrl ↔ uz-Latn) | every other byte: styles, fonts, pictures, formulas, numbers, field codes, comment authors, sheet names |
+| LibreOffice (odt/ods/odp/odg, flat fodt/fods/fodp/fodg) | the same | the same |
+| RTF, EPUB, FB2, HTML/XHTML, XML, SVG | text, titles, alt/title attributes, metadata | markup, scripts, styles, code, URLs, `translate="no"` |
+| TXT, CSV, Markdown, JSON, SRT/VTT/ASS | text; JSON string values (not keys) | encoding and BOM (legacy Windows-1251/KOI8-R/DOS-866 files become UTF-8), line endings, code blocks, link targets, timings, tags |
+
+A word split across differently formatted runs (**ШАҲ**АР) still converts as one word (**SHAH**AR, **Ş**AHAR):
+whole paragraphs go through the engine and each run gets its share back. PDF and the old binary .doc/.xls/.ppt
+are not supported (the app says so); save those as docx/xlsx/pptx first.
+
+Security: a strict Content-Security-Policy (own origin only, `wasm-unsafe-eval`, Trusted Types), subresource
+integrity, no third-party resources, no `innerHTML`, ZIP-bomb and size limits, XML parsed without entity expansion.
+
+```bash
+cd web
+npm ci
+npm start                # http://localhost:4200 (builds core/wasm on first run)
+npm run test:engine      # engine + document formats (+ LibreOffice round-trips when soffice is installed)
+npm test                 # Angular unit tests
+npm run build && npx playwright install chromium && npm run e2e
+```
+
+Deployment: `.github/workflows/deploy-pages.yml` publishes to GitHub Pages after CI passes on `main`;
+`docs/DNS.md` sets up the `latin.jaybi.uz` domain. Deep links: `https://latin.jaybi.uz/?text=Toshkent&to=cyr`.
 
 ## Office and LibreOffice
 

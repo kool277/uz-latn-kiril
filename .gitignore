@@ -35,3 +35,9 @@ xcuserdata/
 .DS_Store
 .env
 .env.*
+
+# web: copied from core/, spec/ and the Office/LibreOffice modules by web/scripts/sync-core.mjs
+web/src/generated/
+web/test/generated/
+web/public/wasm/
+web/public/downloads/

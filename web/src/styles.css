@@ -1,0 +1,65 @@
+/* Design tokens carried over from the original latin.jaybi.uz page */
+:root {
+  --bg: #f6f3ee;
+  --panel: #ffffff;
+  --ink: #1c1917;
+  --muted: #6b6560;
+  --line: #e2ddd5;
+  --accent: #0f766e;
+  --accent-ink: #ffffff;
+  --accent-soft: #d8efec;
+  --warn: #b45309;
+  --danger: #b91c1c;
+  --ok: #15803d;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --sans: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif: Georgia, "Times New Roman", serif;
+  --radius: 14px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141311; --panel: #1e1c19; --ink: #f1ede6; --muted: #a39c92; --line: #332f2a;
+    --accent: #2dd4bf; --accent-ink: #062a27; --accent-soft: #15302d; --warn: #f59e0b; --danger: #f87171; --ok: #4ade80;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141311; --panel: #1e1c19; --ink: #f1ede6; --muted: #a39c92; --line: #332f2a;
+  --accent: #2dd4bf; --accent-ink: #062a27; --accent-soft: #15302d; --warn: #f59e0b; --danger: #f87171; --ok: #4ade80;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); }
+body { min-height: 100vh; -webkit-text-size-adjust: 100%; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* buttons and segmented controls */
+.btn {
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 10px;
+  padding: 8px 12px; font: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;
+}
+.btn:hover:not(:disabled) { border-color: var(--accent); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+.btn.small { padding: 4px 8px; font-size: .85rem; }
+.btn.icon { padding: 8px 10px; font-size: 1.1rem; line-height: 1; }
+.btn.ghost { border-color: transparent; background: transparent; }
+
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel); flex-wrap: wrap; }
+.seg button { border: 0; background: transparent; color: var(--ink); padding: 8px 12px; font: inherit; cursor: pointer; }
+.seg button[aria-checked="true"], .seg button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.seg button + button { border-left: 1px solid var(--line); }
+
+label.chk { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: .9rem; cursor: pointer; }
+label.chk input { accent-color: var(--accent); }
+
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+.muted { color: var(--muted); }
+.note { padding: 12px 14px; border: 1px dashed var(--line); border-radius: 12px; color: var(--muted); font-size: .9rem; }
+.note code, code { font-family: var(--mono); }
+
+progress { accent-color: var(--accent); }

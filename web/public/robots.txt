@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://latin.jaybi.uz/sitemap.xml

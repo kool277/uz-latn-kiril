@@ -1,0 +1,31 @@
+<div class="grid">
+  <section class="pane card">
+    <div class="head">
+      <label for="src"><b>{{ i18n.t('text.input') }}</b></label>
+      @if (detectedLabel()) { <span class="detected" data-testid="detected">— {{ detectedLabel() }}</span> }
+      <span class="spacer"></span>
+      <button type="button" class="btn small" (click)="paste()">{{ i18n.t('text.paste') }}</button>
+      <button type="button" class="btn small" (click)="clear()" [disabled]="!source()">{{ i18n.t('text.clear') }}</button>
+    </div>
+    <textarea #src id="src" data-testid="source" [value]="source()" (input)="onInput($event)"
+              [placeholder]="i18n.t('text.placeholder')" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+    <div class="stat">{{ sourceStats() }}</div>
+  </section>
+  <section class="pane card">
+    <div class="head">
+      <label for="dst"><b>{{ i18n.t('text.output') }}</b></label>
+      <span class="spacer"></span>
+      <button type="button" class="btn small primary" (click)="copy()" [disabled]="!result()">{{ i18n.t('text.copy') }}</button>
+      <details #menu class="menu">
+        <summary class="btn small" [attr.aria-label]="i18n.t('text.exportAs')">{{ i18n.t('text.export') }} ▾</summary>
+        <div class="menu-body" role="menu">
+          @for (f of formats; track f) {
+            <button type="button" role="menuitem" class="btn small ghost" [disabled]="!result()" (click)="export(f, menu)">.{{ f }}</button>
+          }
+        </div>
+      </details>
+    </div>
+    <textarea #dst id="dst" data-testid="result" readonly [value]="result()" [placeholder]="i18n.t('text.resultPlaceholder')"></textarea>
+    <div class="stat">{{ resultStats() }}@if (directionLabel()) { · {{ directionLabel() }} }</div>
+  </section>
+</div>

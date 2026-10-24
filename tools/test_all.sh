@@ -17,5 +17,8 @@ if command -v soffice >/dev/null 2>&1 && python3 -c "import uno" 2>/dev/null; th
 else
   echo "== LibreOffice not available: Basic suite skipped"
 fi
-echo "== web files";    cp "$ROOT/core/js/uztranslit.js" "$ROOT/web/uztranslit.js" && echo "web/uztranslit.js synced"
+echo "== Web engine (fixtures through both engine builds, every document format; LibreOffice round-trips when installed)"
+( cd "$ROOT/web" &&
+  { [ -d node_modules ] || npm ci --no-audit --no-fund --silent; } &&
+  npm run --silent test:engine ) || fail=1
 [ $fail -eq 0 ] && echo "ALL SUITES GREEN" || { echo "FAILURES"; exit 1; }

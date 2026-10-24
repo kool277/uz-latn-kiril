@@ -1,0 +1,66 @@
+name: Deploy latin.jaybi.uz
+
+# Publishes web/ to GitHub Pages after CI has passed on main (or by hand). The site ships the tested engine:
+# the build compiles core/wasm and copies it in (web/scripts/sync-core.mjs).
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # only a successful CI run of a push to this repository: the `branches` filter matches the head branch
+    # *name*, so without these checks a fork's pull request from a branch called "main" could get deployed
+    if: >-
+      github.event_name == 'workflow_dispatch' || (
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            core/wasm/package-lock.json
+            web/package-lock.json
+      - id: pages
+        uses: actions/configure-pages@v6
+      - name: Build
+        working-directory: web
+        env:
+          # "" on latin.jaybi.uz, "/<repo>" while the site lives on <user>.github.io
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build -- --base-href "$BASE_PATH/"
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: web/dist/uztranslit-web/browser
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
