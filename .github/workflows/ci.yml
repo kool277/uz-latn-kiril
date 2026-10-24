@@ -16,7 +16,7 @@ jobs:
   conformance:
     name: Conformance (JS, Python, WebAssembly, LibreOffice Basic, document formats)
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -26,10 +26,11 @@ jobs:
           cache-dependency-path: |
             core/wasm/package-lock.json
             web/package-lock.json
-      - name: Install LibreOffice (Basic test runner, document round-trips)
+      - name: Install LibreOffice (Basic test runner, both extension editions, document round-trips)
         run: |
           sudo apt-get update
-          sudo apt-get install -y libreoffice-core libreoffice-writer libreoffice-calc libreoffice-impress python3-uno
+          sudo apt-get install -y libreoffice-core libreoffice-writer libreoffice-calc libreoffice-impress python3-uno \
+            libreoffice-script-provider-python
       - name: Run every suite
         run: tools/test_all.sh
 

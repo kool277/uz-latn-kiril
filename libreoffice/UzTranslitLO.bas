@@ -23,6 +23,7 @@ Public UzOptAscii As Boolean            ' True: use ' instead of U+02BB / U+02BC
 Public UzOptKeepHardSignAfterO As Boolean ' True: Cyrillic hard sign after short u stays (mu'jiza keeps the tutuq); default drops it
 Public UzOptNoTsFinal As Boolean        ' True: never turn word-final "ts" into Cyrillic tse
 Public UzOptNoDictionary As Boolean     ' True: skip the loanword dictionary
+Public UzOptNoSkipUrls As Boolean       ' True: also convert URLs, e-mail addresses and @handles (default keeps them)
 
 ' ---------- internal tables ----------
 Private mInit As Boolean
@@ -49,16 +50,15 @@ Public Function UzConvert(ByVal Text As String, ByVal FromScript As String, ByVa
     FromScript = LCase$(FromScript): ToScript = LCase$(ToScript)
     If FromScript = "auto" Then FromScript = UzDetect(Text)
     If FromScript = ToScript Then UzConvert = Text: Exit Function
-    If FromScript = "cyr" And (ToScript = "lat" Or ToScript = "new") Then
-        UzConvert = CyrToLatin(Text, (ToScript = "new"))
-    ElseIf (FromScript = "lat" Or FromScript = "new") And ToScript = "cyr" Then
-        UzConvert = LatinToCyr(Text, (FromScript = "new"))
-    ElseIf FromScript = "lat" And ToScript = "new" Then
-        UzConvert = LatToNew(Text)
-    ElseIf FromScript = "new" And ToScript = "lat" Then
-        UzConvert = NewToLat(Text)
-    Else
+    If Not ((FromScript = "cyr" And (ToScript = "lat" Or ToScript = "new")) _
+        Or ((FromScript = "lat" Or FromScript = "new") And ToScript = "cyr") _
+        Or (FromScript = "lat" And ToScript = "new") Or (FromScript = "new" And ToScript = "lat")) Then
         Err.Raise 5, "UzTranslit", "Unknown direction " & FromScript & " -> " & ToScript
+    End If
+    If UzOptNoSkipUrls Then
+        UzConvert = ConvertSlice(Text, FromScript, ToScript)
+    Else
+        UzConvert = WithSkips(Text, FromScript, ToScript)
     End If
 End Function
 
@@ -108,9 +108,149 @@ Public Function UzDetect(ByVal Text As String) As String
     End If
 End Function
 
+' Converts the joined pieces(lo..hi) as one string and splits the result back over the pieces into outs(lo..hi), for
+' text that formatting cuts into runs: a word half bold, half plain still converts as one word, and the joined outs
+' are always exactly UzConvert of the joined pieces. A cut lands where the conversion of the text before it ends. No
+' rule looks across whitespace, so only the part of the word up to the cut is converted again, and a paragraph of
+' thousands of runs stays linear. Where a rule looks across a cut inside a word, a letter may move to the next piece.
+Public Sub UzSplitConvert(pieces() As String, outs() As String, ByVal lo As Long, ByVal hi As Long, ByVal f As String, ByVal t As String)
+    Dim P As String, Q As String, i As Long, b As Long, w As Long, safe As Long, safeLen As Long, sPrev As Long, sCur As Long
+    If hi < lo Then Exit Sub
+    ReDim outs(lo To hi)
+    For i = lo To hi
+        P = P & pieces(i)
+    Next
+    If LCase$(f) = "auto" Then f = UzDetect(P)
+    Q = UzConvert(P, f, t)
+    If Q = P Then
+        For i = lo To hi
+            outs(i) = pieces(i)
+        Next
+        Exit Sub
+    End If
+    For i = lo To hi
+        b = b + Len(pieces(i))
+        If i = hi Then
+            sCur = Len(Q)
+        Else
+            w = b                                          ' last whitespace before the cut, if after the last one known
+            Do While w > safe
+                If IsJsSpace(CodeAt(P, w)) Then Exit Do
+                w = w - 1
+            Loop
+            If w > safe Then
+                safeLen = safeLen + Len(UzConvert(Mid$(P, safe + 1, w - safe), f, t))
+                safe = w
+            End If
+            sCur = safeLen
+            If b > safe Then sCur = sCur + Len(UzConvert(Mid$(P, safe + 1, b - safe), f, t))
+            If sCur > Len(Q) Then sCur = Len(Q)
+        End If
+        If sCur < sPrev Then sCur = sPrev
+        outs(i) = Mid$(Q, sPrev + 1, sCur - sPrev)
+        sPrev = sCur
+    Next
+End Sub
+
 ' =====================================================================================
 '  ENGINE (mirrors spec/SPEC.md section 5)
 ' =====================================================================================
+
+Private Function ConvertSlice(ByVal s As String, ByVal f As String, ByVal t As String) As String
+    If Len(s) = 0 Then Exit Function
+    If f = "cyr" Then
+        ConvertSlice = CyrToLatin(s, (t = "new"))
+    ElseIf t = "cyr" Then
+        ConvertSlice = LatinToCyr(s, (f = "new"))
+    ElseIf f = "lat" Then
+        ConvertSlice = LatToNew(s)
+    Else
+        ConvertSlice = NewToLat(s)
+    End If
+End Function
+
+' ---------- URL / e-mail protection (SPEC section 5.6) ----------
+' Tokens of the JavaScript expression (https?://|www\.)\S+|\S+@\S+\.\S+|@\w+ with JavaScript's \s and \w stay as
+' they are; the text between them is converted slice by slice. A scanner, so every host matches the reference.
+Private Function WithSkips(ByVal s As String, ByVal f As String, ByVal t As String) As String
+    Dim n As Long, p As Long, last As Long, runEnd As Long, runAt As Long, k As Long, dotPos As Long
+    Dim mEnd As Long, pre As Long, c As Long, out As String
+    n = Len(s): p = 1: last = 1: runEnd = 0
+    Do While p <= n
+        c = CodeAt(s, p)
+        If IsJsSpace(c) Then
+            p = p + 1
+        Else
+            If p >= runEnd Then
+                ' a new run of non-space characters; \S+@\S+\.\S+ matches from p to its end iff an "@" at k >= p + 1
+                ' is followed by a "." at d >= k + 2 with at least one character after it
+                runEnd = p
+                Do While runEnd <= n
+                    If IsJsSpace(CodeAt(s, runEnd)) Then Exit Do
+                    runEnd = runEnd + 1
+                Loop
+                dotPos = 0
+                For k = runEnd - 2 To p Step -1
+                    If CodeAt(s, k) = 46 Then dotPos = k: Exit For
+                Next
+                runAt = 0
+                If dotPos > 0 Then
+                    For k = dotPos - 2 To p Step -1
+                        If CodeAt(s, k) = 64 Then runAt = k: Exit For
+                    Next
+                End If
+            End If
+            mEnd = 0
+            pre = UrlPrefix(s, p, n)
+            If pre > 0 And p + pre < runEnd Then
+                mEnd = runEnd
+            ElseIf runAt >= p + 1 Then
+                mEnd = runEnd
+            ElseIf c = 64 And p < n Then
+                If IsWordChar(CodeAt(s, p + 1)) Then
+                    mEnd = p + 2
+                    Do While mEnd <= n
+                        If Not IsWordChar(CodeAt(s, mEnd)) Then Exit Do
+                        mEnd = mEnd + 1
+                    Loop
+                End If
+            End If
+            If mEnd = 0 Then
+                p = p + 1
+            Else
+                out = out & ConvertSlice(Mid$(s, last, p - last), f, t) & Mid$(s, p, mEnd - p)
+                last = mEnd: p = mEnd
+            End If
+        End If
+    Loop
+    WithSkips = out & ConvertSlice(Mid$(s, last), f, t)
+End Function
+
+' "www." -> 4, "http://" -> 7, "https://" -> 8 (case-sensitive, like the reference), else 0
+Private Function UrlPrefix(ByVal s As String, ByVal p As Long, ByVal n As Long) As Long
+    If p + 3 <= n Then
+        If Mid$(s, p, 4) = "www." Then UrlPrefix = 4: Exit Function
+    End If
+    If p + 6 <= n Then
+        If Mid$(s, p, 7) = "http://" Then UrlPrefix = 7: Exit Function
+    End If
+    If p + 7 <= n Then
+        If Mid$(s, p, 8) = "https://" Then UrlPrefix = 8: Exit Function
+    End If
+End Function
+
+' JavaScript's \s
+Private Function IsJsSpace(ByVal c As Long) As Boolean
+    Select Case c
+        Case 9 To 13, 32, &HA0&, &H1680&, &H2000& To &H200A&, &H2028&, &H2029&, &H202F&, &H205F&, &H3000&, &HFEFF&
+            IsJsSpace = True
+    End Select
+End Function
+
+' JavaScript's \w (ASCII only)
+Private Function IsWordChar(ByVal c As Long) As Boolean
+    IsWordChar = (c >= 48 And c <= 57) Or (c >= 65 And c <= 90) Or (c >= 97 And c <= 122) Or c = 95
+End Function
 
 ' ---------- Cyrillic -> Latin (toNew=False: 1995, toNew=True: 2026) ----------
 Private Function CyrToLatin(ByVal s As String, ByVal toNew As Boolean) As String
@@ -815,9 +955,12 @@ Private Sub T(ByRef ok As Long, ByRef bad As Long, ByRef msg As String, ByVal go
 End Sub
 
 ' =====================================================================================
-'  LibreOffice UI (Writer, Calc, Impress, Draw) — appended to the shared engine by tools/make_lo_basic.py
-'  Tools → Macros → Run Macro → Standard → UzTranslitLO → UzLO_LatToNew (etc.)
-'  Selection if any, otherwise the whole document. Formatting is kept (text-portion level).
+'  LibreOffice UI (Writer, Calc, Impress, Draw) -- appended to the shared engine by tools/make_lo_basic.py
+'  Tools -> Macros -> Run Macro -> Standard -> UzTranslitLO -> UzLO_LatToNew (etc.)
+'  Selection if any, otherwise the whole document. Each paragraph is converted as one string, so a word split
+'  across differently formatted portions keeps its context (casing, e/ye, digraphs, dictionary), and the result is
+'  split back over the portions, which keep their formatting. "Auto" detects the script once per run.
+'  Set UZT_QUIET=1 in soffice's environment for unattended runs: no message boxes.
 ' =====================================================================================
 Public Sub UzLO_CyrToLat()
     UzLO_Run "cyr", "lat"
@@ -847,23 +990,65 @@ Public Sub UzLO_AutoToCyr()
     UzLO_Run "auto", "cyr"
 End Sub
 
+' Writer text positions are live: they move with edits (one that sits exactly where text is inserted moves past it),
+' and Writer text is rewritten front to back. The text of cells and shapes (EditEngine) is addressed by plain
+' indices, which go stale when earlier text changes length: it is rewritten back to front.
+Private mWriter As Boolean
+
+Private Function UzLO_Quiet() As Boolean
+    UzLO_Quiet = (Environ("UZT_QUIET") = "1")
+End Function
+
 Private Sub UzLO_Run(ByVal f As String, ByVal t As String)
-    Dim doc As Object, cnt As Long
+    Dim doc As Object, um As Object, cnt As Long, kind As Integer, recWas As Boolean, calcWas As Boolean
+    Dim errNo As Long, errMsg As String
     Set doc = ThisComponent
     If doc.supportsService("com.sun.star.text.TextDocument") Then
-        cnt = UzLO_Writer(doc, f, t)
+        kind = 1
     ElseIf doc.supportsService("com.sun.star.sheet.SpreadsheetDocument") Then
-        cnt = UzLO_Calc(doc, f, t)
+        kind = 2
     ElseIf doc.supportsService("com.sun.star.drawing.DrawingDocument") Or doc.supportsService("com.sun.star.presentation.PresentationDocument") Then
-        cnt = UzLO_Draw(doc, f, t)
+        kind = 3
     Else
-        MsgBox "UzTranslit: unsupported document type", 48, "UzTranslit"
+        If Not UzLO_Quiet() Then MsgBox "UzTranslit: unsupported document type", 48, "UzTranslit"
         Exit Sub
     End If
-    MsgBox "UzTranslit: " & cnt & " fragment(s) converted (" & f & " -> " & t & ")", 64, "UzTranslit"
+    mWriter = (kind = 1)
+    ' one undo step for the whole run, and no layout after every change (that alone makes long paragraphs 30x slower);
+    ' tracked changes would keep every old word next to its conversion, formulas need not recalculate per cell
+    On Error Resume Next
+    Set um = doc.getUndoManager()
+    um.enterUndoContext("UzTranslit")
+    doc.lockControllers()
+    If kind = 1 Then recWas = doc.RecordChanges: doc.RecordChanges = False
+    If kind = 2 Then calcWas = doc.isAutomaticCalculationEnabled(): doc.enableAutomaticCalculation(False)
+    On Error GoTo failed
+    Select Case kind
+        Case 1: cnt = UzLO_Writer(doc, f, t)
+        Case 2: cnt = UzLO_Calc(doc, f, t)
+        Case 3: cnt = UzLO_Draw(doc, f, t)
+    End Select
+cleanup:
+    On Error Resume Next
+    If kind = 1 Then doc.RecordChanges = recWas
+    If kind = 2 Then doc.enableAutomaticCalculation(calcWas)
+    doc.unlockControllers()
+    um.leaveUndoContext()
+    On Error GoTo 0
+    If errNo <> 0 Then Err.Raise errNo, "UzTranslit", errMsg
+    If Not UzLO_Quiet() Then MsgBox "UzTranslit: " & cnt & " fragment(s) converted (" & f & " -> " & t & ")", 64, "UzTranslit"
+    Exit Sub
+failed:
+    errNo = Err: errMsg = Error$
+    Resume cleanup
 End Sub
 
-' ---- shared: convert every text portion of an XText (paragraphs, tables inside Writer text) ----
+' "auto" becomes the script of the text the run will convert (one decision for the whole run)
+Private Function UzLO_Resolve(ByVal f As String, ByVal sample As String) As String
+    If f = "auto" Then UzLO_Resolve = UzDetect(Left$(sample, 200000)) Else UzLO_Resolve = f
+End Function
+
+' ---- shared: every paragraph of an XText (and the text tables inside Writer text) ----
 Private Function UzLO_XText(ByVal xt As Object, ByVal f As String, ByVal t As String) As Long
     Dim en As Object, el As Object, cnt As Long
     If IsNull(xt) Then Exit Function
@@ -888,48 +1073,106 @@ Private Function UzLO_Table(ByVal tbl As Object, ByVal f As String, ByVal t As S
     UzLO_Table = cnt
 End Function
 
+' One paragraph = one string. Portions that are not text stand for a boundary (fields, footnote anchors, frames)
+' or for nothing (bookmarks and other invisible marks, which may sit inside a word). UzSplitConvert splits the
+' converted paragraph back over the portions.
 Private Function UzLO_Paragraph(ByVal para As Object, ByVal f As String, ByVal t As String) As Long
-    Dim pe As Object, por As Object, s As String, conv As String, cnt As Long
+    Dim pe As Object, por As Object, kind As String, n As Long, i As Long, k As Long, cnt As Long
+    Dim pors() As Object, texts() As String, isText() As Boolean, outs() As String
+    ReDim pors(0 To 15): ReDim texts(0 To 15): ReDim isText(0 To 15)
     Set pe = para.createEnumeration()
     Do While pe.hasMoreElements()
         Set por = pe.nextElement()
-        If por.TextPortionType = "Text" Then
-            s = por.getString()
-            If Len(s) > 0 Then
-                conv = UzConvert(s, f, t)
-                If conv <> s Then
-                    UzLO_ReplacePortion por, conv
+        kind = ""
+        On Error Resume Next
+        kind = por.TextPortionType
+        On Error GoTo 0
+        If n > UBound(pors) Then
+            ReDim Preserve pors(0 To 2 * n): ReDim Preserve texts(0 To 2 * n): ReDim Preserve isText(0 To 2 * n)
+        End If
+        Set pors(n) = por
+        isText(n) = False
+        Select Case kind
+            Case "Text", ""
+                isText(n) = True
+                texts(n) = por.getString()
+            Case "Bookmark", "ReferenceMark", "DocumentIndexMark", "Redline", "SoftPageBreak", "InContentMetadata", "AnnotationEnd", "ContentControl"
+                texts(n) = ""
+            Case "Annotation"
+                texts(n) = ""
+                cnt = cnt + UzLO_Annotation(por, f, t)
+            Case Else
+                texts(n) = ChrW(&HFFFC&)
+        End Select
+        n = n + 1
+    Loop
+    If n > 0 Then
+        UzSplitConvert texts, outs, 0, n - 1, f, t
+        For k = 0 To n - 1
+            If mWriter Then i = k Else i = n - 1 - k
+            If isText(i) Then
+                If outs(i) <> texts(i) Then
+                    UzLO_ReplacePortion pors(i), outs(i)
                     cnt = cnt + 1
                 End If
             End If
-        End If
-    Loop
+        Next
+    End If
     UzLO_Paragraph = cnt
 End Function
 
-' Replace a text portion's string while keeping its character formatting (setString alone inherits
-' the neighbouring run's attributes at paragraph start).
+' A Writer comment: its text is converted, its author and date are not.
+Private Function UzLO_Annotation(ByVal por As Object, ByVal f As String, ByVal t As String) As Long
+    Dim fld As Object, s As String, conv As String
+    On Error GoTo done
+    Set fld = por.TextField
+    s = fld.Content
+    If Len(s) > 0 Then
+        conv = UzConvert(s, f, t)
+        If conv <> s Then fld.Content = conv: UzLO_Annotation = 1
+    End If
+done:
+End Function
+
+' The new text goes where it takes the portion's own attributes, then the old text goes: no attribute is copied,
+' which keeps every one of them (styles, language, effects) and is 10x faster than saving and restoring them.
+' Writer: text added where a portion ends takes the neighbour's attributes, so the new text goes in after the first
+' character and the old characters around it are removed; a hyperlink does not grow over text added at its end,
+' so a link gets its address back if it lost it. Cells and shapes: text added at the end of a portion takes its
+' attributes, and the portion's old range still holds the old text.
 Private Sub UzLO_ReplacePortion(ByVal por As Object, ByVal conv As String)
-    Dim names As Variant, saved(24) As Variant, i As Long, cur As Object
-    names = Array("CharWeight", "CharPosture", "CharUnderline", "CharUnderlineColor", "CharUnderlineHasColor", "CharColor", _
-                  "CharHeight", "CharFontName", "CharStrikeout", "CharBackColor", "CharBackTransparent", "CharEscapement", _
-                  "CharEscapementHeight", "CharCaseMap", "CharHidden", "CharShadowed", "CharContoured", "CharOverline", _
-                  "CharRelief", "CharWeightAsian", "CharPostureAsian", "CharHeightAsian", "CharFontNameAsian", "CharKerning", "CharScaleWidth")
+    Dim xt As Object, cur As Object, url As String, target As String, nm As String
+    Set xt = por.getText()
+    If Not mWriter Then
+        xt.insertString(xt.createTextCursorByRange(por.getEnd()), conv, False)
+        xt.createTextCursorByRange(por).setString("")
+        Exit Sub
+    End If
     On Error Resume Next
-    For i = 0 To UBound(names)
-        saved(i) = por.getPropertyValue(names(i))
-    Next
-    Set cur = por.getText().createTextCursorByRange(por)
-    cur.setString(conv)
-    For i = 0 To UBound(names)
-        cur.setPropertyValue(names(i), saved(i))
-    Next
+    url = por.HyperLinkURL: target = por.HyperLinkTarget: nm = por.HyperLinkName
+    On Error GoTo 0
+    Set cur = xt.createTextCursorByRange(por.getStart())
+    cur.goRight(1, False)
+    xt.insertString(cur, conv, False)                      ' the cursor moves on past the new text
+    cur.gotoRange(por.getEnd(), True)
+    cur.setString("")                                      ' the old text after the new
+    Set cur = xt.createTextCursorByRange(por.getStart())
+    cur.goRight(1, True)
+    cur.setString("")                                      ' the old first character
+    If url <> "" Then
+        Set cur = xt.createTextCursorByRange(por)
+        If cur.HyperLinkURL <> url Then
+            cur.HyperLinkURL = url: cur.HyperLinkTarget = target: cur.HyperLinkName = nm
+        End If
+    End If
 End Sub
 
 ' ---- Writer ----
-Private Function UzLO_Writer(ByVal doc As Object, ByVal f As String, ByVal t As String) As Long
-    Dim sel As Object, rng As Object, cur As Object, i As Long, cnt As Long, hadSel As Boolean
+Private Function UzLO_Writer(ByVal doc As Object, ByRef f As String, ByVal t As String) As Long
+    Dim sel As Object, rng As Object, i As Long, cnt As Long, sample As String
+    Dim ranges() As Object, nr As Long
     Dim frames As Object, notes As Object, styles As Object, ps As Object
+    ReDim ranges(0 To 0)
     On Error Resume Next
     Set sel = doc.CurrentController.getSelection()
     On Error GoTo 0
@@ -938,14 +1181,23 @@ Private Function UzLO_Writer(ByVal doc As Object, ByVal f As String, ByVal t As 
             For i = 0 To sel.getCount() - 1
                 Set rng = sel.getByIndex(i)
                 If Len(rng.getString()) > 0 Then
-                    hadSel = True
-                    Set cur = rng.getText().createTextCursorByRange(rng)
-                    cnt = cnt + UzLO_XText(cur, f, t)
+                    ReDim Preserve ranges(0 To nr)
+                    Set ranges(nr) = rng
+                    nr = nr + 1
+                    sample = sample & rng.getString() & Chr(10)
                 End If
             Next
         End If
     End If
-    If hadSel Then UzLO_Writer = cnt: Exit Function
+    If nr > 0 Then
+        f = UzLO_Resolve(f, sample)
+        For i = 0 To nr - 1
+            cnt = cnt + UzLO_XText(ranges(i).getText().createTextCursorByRange(ranges(i)), f, t)
+        Next
+        UzLO_Writer = cnt
+        Exit Function
+    End If
+    f = UzLO_Resolve(f, doc.getText().getString())
     cnt = cnt + UzLO_XText(doc.getText(), f, t)
     On Error Resume Next
     Set frames = doc.getTextFrames()
@@ -980,45 +1232,91 @@ Private Function UzLO_Writer(ByVal doc As Object, ByVal f As String, ByVal t As 
 End Function
 
 ' ---- Calc ----
-Private Function UzLO_CellRange(ByVal rng As Object, ByVal f As String, ByVal t As String) As Long
-    Dim q As Object, en As Object, c As Object, s As String, conv As String, cnt As Long
-    Set q = rng.queryContentCells(4)        ' com.sun.star.sheet.CellFlags.STRING
-    Set en = q.getCells().createEnumeration()
-    Do While en.hasMoreElements()
-        Set c = en.nextElement()
-        s = c.getString()
-        conv = UzConvert(s, f, t)
-        If conv <> s Then c.setString(conv): cnt = cnt + 1
+Private Function UzLO_CellText(ByVal rng As Object) As String
+    Dim en As Object, s As String
+    Set en = rng.queryContentCells(4).getCells().createEnumeration()   ' com.sun.star.sheet.CellFlags.STRING
+    Do While en.hasMoreElements() And Len(s) < 200000
+        s = s & en.nextElement().getString() & Chr(10)
     Loop
-    UzLO_CellRange = cnt
+    UzLO_CellText = s
 End Function
 
-Private Function UzLO_Calc(ByVal doc As Object, ByVal f As String, ByVal t As String) As Long
-    Dim sel As Object, cur As Object, i As Long, cnt As Long, single As Boolean
+Private Function UzLO_CellRange(ByVal rng As Object, ByVal f As String, ByVal t As String) As Long
+    Dim en As Object, cnt As Long
+    Set en = rng.queryContentCells(4).getCells().createEnumeration()
+    Do While en.hasMoreElements()
+        cnt = cnt + UzLO_XText(en.nextElement(), f, t)   ' paragraph by paragraph: rich text in a cell keeps its formatting
+    Loop
+    UzLO_CellRange = cnt + UzLO_Comments(rng, f, t)
+End Function
+
+' cell comments inside the range (their authors are not touched)
+Private Function UzLO_Comments(ByVal rng As Object, ByVal f As String, ByVal t As String) As Long
+    Dim anns As Object, a As Object, i As Long, cnt As Long, addr As Object, pos As Object, s As String, conv As String
+    On Error GoTo done
+    Set addr = rng.getRangeAddress()
+    Set anns = rng.getSpreadsheet().getAnnotations()
+    For i = 0 To anns.getCount() - 1
+        Set a = anns.getByIndex(i)
+        Set pos = a.getPosition()
+        If pos.Column >= addr.StartColumn And pos.Column <= addr.EndColumn And pos.Row >= addr.StartRow And pos.Row <= addr.EndRow Then
+            s = a.getString()
+            conv = UzConvert(s, f, t)
+            If conv <> s Then a.setString(conv): cnt = cnt + 1
+        End If
+    Next
+done:
+    UzLO_Comments = cnt
+End Function
+
+Private Function UzLO_Calc(ByVal doc As Object, ByRef f As String, ByVal t As String) As Long
+    Dim sel As Object, cur As Object, i As Long, cnt As Long, single As Boolean, sample As String
+    Dim targets() As Object, nt As Long
+    ReDim targets(0 To 0)
     Set sel = doc.CurrentSelection
     If sel.supportsService("com.sun.star.sheet.SheetCellRanges") Then
         For i = 0 To sel.getCount() - 1
-            cnt = cnt + UzLO_CellRange(sel.getByIndex(i), f, t)
+            ReDim Preserve targets(0 To nt)
+            Set targets(nt) = sel.getByIndex(i)
+            nt = nt + 1
         Next
     ElseIf sel.supportsService("com.sun.star.sheet.SheetCellRange") Then
         single = (sel.getRows().getCount() = 1 And sel.getColumns().getCount() = 1)
-        If single Then
+        Set targets(0) = sel
+        nt = 1
+        If single And Not UzLO_Quiet() Then
             If MsgBox("Convert the whole sheet? (No = only the selected cell)", 36, "UzTranslit") = 6 Then
                 Set cur = doc.CurrentController.getActiveSheet().createCursor()
                 cur.gotoStartOfUsedArea(False)
                 cur.gotoEndOfUsedArea(True)
-                cnt = UzLO_CellRange(cur, f, t)
-            Else
-                cnt = UzLO_CellRange(sel, f, t)
+                Set targets(0) = cur
             End If
-        Else
-            cnt = UzLO_CellRange(sel, f, t)
         End If
     End If
+    For i = 0 To nt - 1
+        sample = sample & UzLO_CellText(targets(i))
+    Next
+    f = UzLO_Resolve(f, sample)
+    For i = 0 To nt - 1
+        cnt = cnt + UzLO_CellRange(targets(i), f, t)
+    Next
     UzLO_Calc = cnt
 End Function
 
 ' ---- Impress / Draw ----
+Private Function UzLO_ShapesText(ByVal container As Object) As String
+    Dim i As Long, shp As Object, s As String
+    For i = 0 To container.getCount() - 1
+        Set shp = container.getByIndex(i)
+        If shp.supportsService("com.sun.star.drawing.GroupShape") Then
+            s = s & UzLO_ShapesText(shp)
+        ElseIf shp.supportsService("com.sun.star.drawing.Text") Then
+            s = s & shp.getString() & Chr(10)
+        End If
+    Next
+    UzLO_ShapesText = s
+End Function
+
 Private Function UzLO_Shapes(ByVal container As Object, ByVal f As String, ByVal t As String) As Long
     Dim i As Long, r As Long, c As Long, shp As Object, model As Object, cnt As Long
     For i = 0 To container.getCount() - 1
@@ -1039,13 +1337,18 @@ Private Function UzLO_Shapes(ByVal container As Object, ByVal f As String, ByVal
     UzLO_Shapes = cnt
 End Function
 
-Private Function UzLO_Draw(ByVal doc As Object, ByVal f As String, ByVal t As String) As Long
-    Dim pages As Object, pg As Object, np As Object, i As Long, cnt As Long
+Private Function UzLO_Draw(ByVal doc As Object, ByRef f As String, ByVal t As String) As Long
+    Dim pages As Object, pg As Object, np As Object, i As Long, cnt As Long, sample As String
     Set pages = doc.getDrawPages()
+    For i = 0 To pages.getCount() - 1
+        sample = sample & UzLO_ShapesText(pages.getByIndex(i))
+    Next
+    f = UzLO_Resolve(f, sample)
     For i = 0 To pages.getCount() - 1
         Set pg = pages.getByIndex(i)
         cnt = cnt + UzLO_Shapes(pg, f, t)
         On Error Resume Next
+        Set np = Nothing
         Set np = pg.getNotesPage()
         If Not IsNull(np) Then cnt = cnt + UzLO_Shapes(np, f, t)
         On Error GoTo 0

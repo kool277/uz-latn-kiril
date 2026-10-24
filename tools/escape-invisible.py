@@ -11,7 +11,7 @@ INVISIBLE = re.compile('[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u00
 check = '--check' in sys.argv
 changed = 0
 for path in [a for a in sys.argv[1:] if a != '--check']:
-    with open(path, encoding='utf-8') as f:
+    with open(path, encoding='utf-8', newline='') as f:  # line ends stay as they are (VBA modules are CRLF)
         src = f.read()
     out = INVISIBLE.sub(lambda m: '\\u%04x' % ord(m.group(0)), src)
     if out != src:
@@ -20,7 +20,7 @@ for path in [a for a in sys.argv[1:] if a != '--check']:
             lines = [i + 1 for i, l in enumerate(src.split('\n')) if INVISIBLE.search(l)]
             print('invisible characters in %s, lines %s' % (path, lines[:10]))
             continue
-        with open(path, 'w', encoding='utf-8') as f:
+        with open(path, 'w', encoding='utf-8', newline='') as f:
             f.write(out)
         print('escaped invisible characters in', path)
 sys.exit(1 if changed else 0)

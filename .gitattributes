@@ -1,0 +1,3 @@
+# The VBA editor's File > Import needs CRLF line ends (an LF-only module imports as garbage). The VBA modules are
+# stored with CRLF and never converted, so a raw download from GitHub imports as well.
+office-vba/*.bas -text diff

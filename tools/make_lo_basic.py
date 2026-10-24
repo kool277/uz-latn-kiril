@@ -107,6 +107,7 @@ def build_test_module(out_dir, result_path):
               '    Print #f, logS',
               '    Close #f',
               '    RunDiff',
+              '    RunSplit',
               '    Exit Sub',
               'ErrH:',
               '    ef = FreeFile',
@@ -146,6 +147,7 @@ def build_test_module(out_dir, result_path):
               '            UzOptKeepHardSignAfterO = (Mid(p(2), 2, 1) = "1")',
               '            UzOptNoTsFinal = (Mid(p(2), 3, 1) = "1")',
               '            UzOptNoDictionary = (Mid(p(2), 4, 1) = "1")',
+              '            UzOptNoSkipUrls = (Mid(p(2), 5, 1) = "1")',
               "            On Error Resume Next",
               "            got = UzConvert(UX(p(3)), p(0), p(1))",
               "            If Err <> 0 Then got = \"BASIC ERROR \" & Err & \": \" & Error$: Err.Clear",
@@ -159,11 +161,57 @@ def build_test_module(out_dir, result_path):
               "        End If",
               "    Loop",
               "    Close #f",
-              "    UzOptAscii = False: UzOptKeepHardSignAfterO = False: UzOptNoTsFinal = False: UzOptNoDictionary = False",
+              "    UzOptAscii = False: UzOptKeepHardSignAfterO = False: UzOptNoTsFinal = False: UzOptNoDictionary = False: UzOptNoSkipUrls = False",
               "    f = FreeFile",
               '    Open "%s" For Append As #f' % result_path,
-              '    Print #f, okD & " passed, " & badD & " failed (differential vs core/js, VBA-representable options)"',
+              '    Print #f, okD & " passed, " & badD & " failed (differential vs core/js)"',
               "    Print #f, logD",
+              "    Close #f",
+              "End Sub", ""]
+    split = write_split_tsv(out_dir)
+    lines += ["Private Sub RunSplit",
+              "    Dim f As Integer, ln As String, p() As String, a() As String, w() As String, pieces() As String, outs() As String",
+              "    Dim i As Long, n As Long, okS As Long, badS As Long, logX As String, good As Boolean, why As String",
+              '    If Dir("%s") = "" Then Exit Sub' % split,
+              "    f = FreeFile",
+              '    Open "%s" For Input As #f' % split,
+              "    Do While Not EOF(f)",
+              "        Line Input #f, ln",
+              "        p = Split(ln, Chr(9))",
+              '        a = Split(p(3), "|"): w = Split(p(4), "|")',
+              "        n = UBound(a) + 1",
+              "        ReDim pieces(1 To n)",
+              "        For i = 1 To n",
+              "            pieces(i) = UX(a(i - 1))",
+              "        Next",
+              '        UzOptAscii = (Mid(p(2), 1, 1) = "1")',
+              '        UzOptKeepHardSignAfterO = (Mid(p(2), 2, 1) = "1")',
+              '        UzOptNoTsFinal = (Mid(p(2), 3, 1) = "1")',
+              '        UzOptNoDictionary = (Mid(p(2), 4, 1) = "1")',
+              '        UzOptNoSkipUrls = (Mid(p(2), 5, 1) = "1")',
+              '        why = ""',
+              "        On Error Resume Next",
+              "        UzSplitConvert pieces, outs, 1, n, p(0), p(1)",
+              '        If Err <> 0 Then why = "BASIC ERROR " & Err & ": " & Error$: Err.Clear',
+              "        On Error GoTo 0",
+              '        If why = "" Then',
+              "            For i = 1 To n",
+              '                If outs(i) <> UX(w(i - 1)) Then why = "piece " & i & " got " & outs(i) & " want " & UX(w(i - 1)): Exit For',
+              "            Next",
+              "        End If",
+              '        If why = "" Then',
+              "            okS = okS + 1",
+              "        Else",
+              "            badS = badS + 1",
+              '            If badS <= 20 Then logX = logX & "SPLIT " & p(0) & "->" & p(1) & " " & p(2) & " " & p(3) & ": " & why & Chr(10)',
+              "        End If",
+              "    Loop",
+              "    Close #f",
+              "    UzOptAscii = False: UzOptKeepHardSignAfterO = False: UzOptNoTsFinal = False: UzOptNoDictionary = False: UzOptNoSkipUrls = False",
+              "    f = FreeFile",
+              '    Open "%s" For Append As #f' % result_path,
+              '    Print #f, okS & " passed, " & badS & " failed (UzSplitConvert vs the prefix-by-prefix split)"',
+              "    Print #f, logX",
               "    Close #f",
               "End Sub", ""]
     os.makedirs(out_dir, exist_ok=True)
@@ -174,8 +222,8 @@ def build_test_module(out_dir, result_path):
 
 
 def write_differential_tsv(out_dir):
-    """build/differential.json → TSV for the Basic runner: only cases the VBA options can express (no URL skipping,
-    marks either ʻ/ʼ or ASCII). Columns: from, to, flags (ascii keepHardSign noTsFinal noDictionary), input, output."""
+    """build/differential.json → TSV for the Basic runner: the cases the VBA options can express (marks either ʻ/ʼ
+    or ASCII). Columns: from, to, flags (ascii keepHardSign noTsFinal noDictionary noSkipUrls), input, output."""
     path = os.path.join(out_dir, "differential.tsv")
     src = os.path.join(ROOT, "build", "differential.json")
     if os.path.exists(path):
@@ -187,9 +235,10 @@ def write_differential_tsv(out_dir):
     for c in d["cases"]:
         o = c["options"]
         marks = (o["okina"], o["tutuq"])
-        if o["skipUrls"] or marks not in (("ʻ", "ʼ"), ("'", "'")):
+        if marks not in (("\u02bb", "\u02bc"), ("'", "'")):
             continue
-        flags = "".join("1" if v else "0" for v in (marks == ("'", "'"), not o["dropHardSignAfterO"], not o["tsFinal"], not o["dictionary"]))
+        flags = "".join("1" if v else "0" for v in (marks == ("'", "'"), not o["dropHardSignAfterO"], not o["tsFinal"],
+                                                     not o["dictionary"], not o["skipUrls"]))
         rows.append("\t".join((c["from"], c["to"], flags, hx(c["in"]), hx(c["out"]))))
     # Basic runs ~30 cases a second: a few thousand keep the suite at about two minutes
     rows = rows[:int(os.environ.get("UZT_LO_DIFF_CASES", 3000))]
@@ -198,6 +247,77 @@ def write_differential_tsv(out_dir):
     with open(path, "w", encoding="ascii", newline="\n") as f:
         f.write("\n".join(rows) + "\n")
     return path
+
+
+def naive_split(texts, f, t, options):
+    """The definition UzSplitConvert implements in linear time: each cut where the conversion of all text before it ends."""
+    import uztranslit
+    src = "".join(texts)
+    out = uztranslit.convert(src, f, t, options)
+    if out == src:
+        return list(texts)
+    pieces, prev, b = [], 0, 0
+    for i, s in enumerate(texts):
+        b += len(s)
+        cur = len(out) if i == len(texts) - 1 else min(len(uztranslit.convert(src[:b], f, t, options)), len(out))
+        cur = max(cur, prev)
+        pieces.append(out[prev:cur])
+        prev = cur
+    return pieces
+
+
+def write_split_tsv(out_dir):
+    """Differential cases cut into random runs, with the pieces the prefix-by-prefix split gives (Python core).
+    Columns: from, to, flags, input pieces, output pieces (hex, pieces separated by |)."""
+    import random
+    sys.path.insert(0, os.path.join(ROOT, "core", "python"))
+    path = os.path.join(out_dir, "split.tsv")
+    src = os.path.join(ROOT, "build", "differential.json")
+    if os.path.exists(path):
+        os.remove(path)
+    if not os.path.exists(src):
+        return path
+    d = json.load(open(src, encoding="utf-8"))
+    rng = random.Random(20261024)
+    rows = []
+    for c in d["cases"]:
+        o = c["options"]
+        marks = (o["okina"], o["tutuq"])
+        if c["from"] == "auto" or marks not in (("\u02bb", "\u02bc"), ("'", "'")):
+            continue
+        text, texts, i = c["in"], [], 0
+        while i < len(text):
+            k = rng.randint(1, 8)
+            texts.append(text[i:i + k])
+            i += k
+        flags = "".join("1" if v else "0" for v in (marks == ("'", "'"), not o["dropHardSignAfterO"], not o["tsFinal"],
+                                                     not o["dictionary"], not o["skipUrls"]))
+        want = naive_split(texts, c["from"], c["to"], o)
+        rows.append("\t".join((c["from"], c["to"], flags, "|".join(hx(x) for x in texts), "|".join(hx(x) for x in want))))
+        if len(rows) >= int(os.environ.get("UZT_LO_SPLIT_CASES", 80)):
+            break
+    os.makedirs(out_dir, exist_ok=True)
+    with open(path, "w", encoding="ascii", newline="\n") as f:
+        f.write("\n".join(rows) + "\n")
+    return path
+
+
+def office_library():
+    """The whole MS-Office module (document macros included) as a library of its own, plus a module whose Run
+    compiles it: LibreOffice's VBA mode catches syntax errors in macros that only Office can run."""
+    src = open(VBA, encoding="utf-8").read()
+    src = re.sub(r"^Attribute VB_Name.*\n", "", src)
+    src = src.replace("Option Explicit\n", "Option Explicit\nOption VBASupport 1\n", 1)
+    check = "\n".join(["Option Explicit", "Option VBASupport 1", "",
+                       "Sub Run",
+                       "    Dim f As Integer, s As String",
+                       '    s = UzConvert("Shahar", "lat", "cyr")',
+                       "    f = FreeFile",
+                       '    Open "%s" For Output As #f' % os.path.join(ROOT, "build", "lo-test", "office.txt"),
+                       '    Print #f, "office module compiled: " & s',
+                       "    Close #f",
+                       "End Sub", ""])
+    return {"UzTranslit": src, "UzCheck": check}
 
 
 XBA = ('<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -209,36 +329,37 @@ def esc(s):
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-def install_into_profile(profile_basic_dir, modules):
-    """modules: {name: source}. Writes the Standard library of a LibreOffice user profile."""
-    std = os.path.join(profile_basic_dir, "Standard")
-    os.makedirs(std, exist_ok=True)
-    with open(os.path.join(profile_basic_dir, "script.xlc"), "w", encoding="utf-8") as f:
-        f.write('<?xml version="1.0" encoding="UTF-8"?>\n'
-                '<!DOCTYPE library:libraries PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "libraries.dtd">\n'
-                '<library:libraries xmlns:library="http://openoffice.org/2000/library" xmlns:xlink="http://www.w3.org/1999/xlink">\n'
-                ' <library:library library:name="Standard" xlink:href="$(USER)/basic/Standard/script.xlb/" xlink:type="simple" library:link="false"/>\n'
-                '</library:libraries>\n')
-    with open(os.path.join(profile_basic_dir, "dialog.xlc"), "w", encoding="utf-8") as f:
-        f.write('<?xml version="1.0" encoding="UTF-8"?>\n'
-                '<!DOCTYPE library:libraries PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "libraries.dtd">\n'
-                '<library:libraries xmlns:library="http://openoffice.org/2000/library" xmlns:xlink="http://www.w3.org/1999/xlink">\n'
-                ' <library:library library:name="Standard" xlink:href="$(USER)/basic/Standard/dialog.xlb/" xlink:type="simple" library:link="false"/>\n'
-                '</library:libraries>\n')
-    with open(os.path.join(std, "script.xlb"), "w", encoding="utf-8") as f:
-        f.write('<?xml version="1.0" encoding="UTF-8"?>\n'
-                '<!DOCTYPE library:library PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "library.dtd">\n'
-                '<library:library xmlns:library="http://openoffice.org/2000/library" library:name="Standard" library:readonly="false" library:passwordprotected="false">\n'
-                + "".join(' <library:element library:name="%s"/>\n' % m for m in modules) +
-                '</library:library>\n')
-    with open(os.path.join(std, "dialog.xlb"), "w", encoding="utf-8") as f:
-        f.write('<?xml version="1.0" encoding="UTF-8"?>\n'
-                '<!DOCTYPE library:library PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "library.dtd">\n'
-                '<library:library xmlns:library="http://openoffice.org/2000/library" library:name="Standard" library:readonly="false" library:passwordprotected="false"/>\n')
-    for name, src in modules.items():
-        with open(os.path.join(std, name + ".xba"), "w", encoding="utf-8") as f:
-            f.write(XBA % (name, esc(src)))
-    print("installed modules", list(modules), "into", std)
+def install_into_profile(profile_basic_dir, libs):
+    """libs: {library: {module: source}}. Writes these libraries into a LibreOffice user profile's basic folder."""
+    entries = "".join(' <library:library library:name="%s" xlink:href="$(USER)/basic/%s/%s.xlb/" xlink:type="simple" library:link="false"/>\n'
+                      % (lib, lib, "%s") for lib in libs)
+    for kind in ("script", "dialog"):
+        with open(os.path.join(profile_basic_dir, kind + ".xlc"), "w", encoding="utf-8") as f:
+            f.write('<?xml version="1.0" encoding="UTF-8"?>\n'
+                    '<!DOCTYPE library:libraries PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "libraries.dtd">\n'
+                    '<library:libraries xmlns:library="http://openoffice.org/2000/library" xmlns:xlink="http://www.w3.org/1999/xlink">\n'
+                    + entries.replace("%s", kind) +
+                    '</library:libraries>\n')
+    for lib, modules in libs.items():
+        d = os.path.join(profile_basic_dir, lib)
+        os.makedirs(d, exist_ok=True)
+        for old in os.listdir(d):
+            if old.endswith(".xba"):
+                os.remove(os.path.join(d, old))
+        with open(os.path.join(d, "script.xlb"), "w", encoding="utf-8") as f:
+            f.write('<?xml version="1.0" encoding="UTF-8"?>\n'
+                    '<!DOCTYPE library:library PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "library.dtd">\n'
+                    '<library:library xmlns:library="http://openoffice.org/2000/library" library:name="%s" library:readonly="false" library:passwordprotected="false">\n' % lib
+                    + "".join(' <library:element library:name="%s"/>\n' % m for m in modules) +
+                    '</library:library>\n')
+        with open(os.path.join(d, "dialog.xlb"), "w", encoding="utf-8") as f:
+            f.write('<?xml version="1.0" encoding="UTF-8"?>\n'
+                    '<!DOCTYPE library:library PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "library.dtd">\n'
+                    '<library:library xmlns:library="http://openoffice.org/2000/library" library:name="%s" library:readonly="false" library:passwordprotected="false"/>\n' % lib)
+        for name, src in modules.items():
+            with open(os.path.join(d, name + ".xba"), "w", encoding="utf-8") as f:
+                f.write(XBA % (name, esc(src)))
+        print("installed", lib, list(modules), "into", d)
 
 
 if __name__ == "__main__":
@@ -260,7 +381,8 @@ if __name__ == "__main__":
                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=120)
             profile = os.path.join(install_dir, "user", "basic")
         install_into_profile(profile, {
-            "UzTranslitLO": open(OUT, encoding="utf-8").read(),
-            "UzTest": open(test_path, encoding="utf-8").read(),
+            "Standard": {"UzTranslitLO": open(OUT, encoding="utf-8").read(), "UzTest": open(test_path, encoding="utf-8").read()},
+            "UzOffice": office_library(),
         })
         print("now run:  python3 tools/lo_run_macro.py Standard.UzTest.RunAll", result)
+        print("     and  python3 tools/lo_run_macro.py UzOffice.UzCheck.Run", os.path.join(out_dir, "office.txt"))

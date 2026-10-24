@@ -484,17 +484,38 @@ def _main(argv):
 
 
 # ---------------------------------------------------------------------------------------------
-#  LibreOffice UNO glue (appended after the core by tools/build_oxt.py → uztranslit_lo.py)
-#  Menu: Tools ▸ UzTranslit ▸ …   (Writer, Calc, Impress, Draw). Selection first, else whole document.
+#  LibreOffice UNO glue (appended after the core by tools/build_oxt.py -> uztranslit_lo.py)
+#  Menu: Tools > UzTranslit > ...   (Writer, Calc, Impress, Draw). Selection first, else whole document.
+#  Each paragraph is converted as one string, so a word split across differently formatted portions keeps its
+#  context, and the result is split back over the portions, which keep their formatting. "Auto" detects the
+#  script once per run. UZT_QUIET=1 in soffice's environment: no message boxes (unattended runs, tests).
 # ---------------------------------------------------------------------------------------------
+import os  # noqa: E402
+
 import uno  # noqa: E402
 from com.sun.star.awt.MessageBoxType import INFOBOX, WARNINGBOX, QUERYBOX  # noqa: E402
 from com.sun.star.awt.MessageBoxButtons import BUTTONS_OK, BUTTONS_YES_NO  # noqa: E402
 
 CELL_STRING = 4  # com.sun.star.sheet.CellFlags.STRING
+_OBJECT = "\ufffc"
+# portions that are invisible marks (may sit inside a word); every other non-text portion is a boundary
+_INVISIBLE = {"Bookmark", "ReferenceMark", "DocumentIndexMark", "Redline", "SoftPageBreak", "InContentMetadata",
+              "AnnotationEnd", "ContentControl"}
+
+
+# Writer text positions are live: they move with edits (one that sits exactly where text is inserted moves past it),
+# and Writer text is rewritten front to back. The text of cells and shapes (EditEngine) is addressed by plain
+# indices, which go stale when earlier text changes length: it is rewritten back to front. Set per run by _run().
+_writer_text = [True]
+
+
+def _quiet():
+    return os.environ.get("UZT_QUIET") == "1"
 
 
 def _msg(doc, text, kind=INFOBOX, buttons=BUTTONS_OK):
+    if _quiet():
+        return 0
     try:
         ctx = uno.getComponentContext()
         tk = ctx.ServiceManager.createInstanceWithContext("com.sun.star.awt.Toolkit", ctx)
@@ -505,8 +526,13 @@ def _msg(doc, text, kind=INFOBOX, buttons=BUTTONS_OK):
         return 0
 
 
+def _resolve(f, sample):
+    """'auto' becomes the script of the text this run converts: one decision for the whole run."""
+    return detect(sample[:200000]) if f == "auto" else f
+
+
 def _xtext(xt, f, t):
-    """Convert every text portion of an XText (handles Writer text tables)."""
+    """Every paragraph of an XText (and the text tables inside Writer text)."""
     cnt = 0
     if xt is None:
         return 0
@@ -517,58 +543,132 @@ def _xtext(xt, f, t):
             for name in el.getCellNames():
                 cnt += _xtext(el.getCellByName(name), f, t)
         elif el.supportsService("com.sun.star.text.Paragraph"):
-            pe = el.createEnumeration()
-            while pe.hasMoreElements():
-                por = pe.nextElement()
-                if por.TextPortionType == "Text":
-                    s = por.getString()
-                    if s:
-                        c = convert(s, f, t)
-                        if c != s:
-                            _replace_portion(por, c)
-                            cnt += 1
+            cnt += _paragraph(el, f, t)
     return cnt
 
 
-_CHAR_PROPS = ("CharWeight", "CharPosture", "CharUnderline", "CharUnderlineColor", "CharUnderlineHasColor", "CharColor",
-               "CharHeight", "CharFontName", "CharStrikeout", "CharBackColor", "CharBackTransparent", "CharEscapement",
-               "CharEscapementHeight", "CharCaseMap", "CharHidden", "CharShadowed", "CharContoured", "CharOverline",
-               "CharRelief", "CharWeightAsian", "CharPostureAsian", "CharHeightAsian", "CharFontNameAsian", "CharKerning", "CharScaleWidth")
+_SPACE = re.compile("[" + _JS_SPACE + "]")
+
+
+def _split(texts, f, t):
+    """Converts "".join(texts) as one string and splits the result back over the pieces (None when nothing changes):
+    a word half bold, half plain still converts as one word, and the joined pieces are always exactly the conversion
+    of the whole. A cut lands where the conversion of the text before it ends. No rule looks across whitespace, so
+    only the part of the word up to the cut is converted again, and a paragraph of thousands of portions stays
+    linear. Where a rule looks across a cut inside a word, a letter may move to the next piece."""
+    src = "".join(texts)
+    if f == "auto":
+        f = detect(src)
+    out = convert(src, f, t)
+    if out == src:
+        return None
+    pieces, prev, b, safe, safe_len = [], 0, 0, 0, 0
+    for i, s in enumerate(texts):
+        b += len(s)
+        if i == len(texts) - 1:
+            cur = len(out)
+        else:
+            w = b  # last whitespace before the cut, if after the last one known
+            while w > safe and not _SPACE.match(src, w - 1):
+                w -= 1
+            if w > safe:
+                safe_len += len(convert(src[safe:w], f, t))
+                safe = w
+            cur = min(safe_len + (len(convert(src[safe:b], f, t)) if b > safe else 0), len(out))
+        cur = max(cur, prev)
+        pieces.append(out[prev:cur])
+        prev = cur
+    return pieces
+
+
+def _paragraph(par, f, t):
+    portions, texts, cnt = [], [], 0
+    pe = par.createEnumeration()
+    while pe.hasMoreElements():
+        por = pe.nextElement()
+        try:
+            kind = por.TextPortionType
+        except Exception:
+            kind = ""  # text of cells and shapes has no portion types
+        if kind in ("Text", ""):
+            portions.append(por)
+            texts.append(por.getString())
+        else:
+            portions.append(None)
+            texts.append("" if kind in _INVISIBLE or kind == "Annotation" else _OBJECT)
+            if kind == "Annotation":
+                cnt += _annotation(por, f, t)
+    pieces = _split(texts, f, t) if portions else None
+    if pieces is None:
+        return cnt
+    items = list(zip(portions, texts, pieces))
+    for por, s, new in (items if _writer_text[0] else reversed(items)):
+        if por is not None and new != s:
+            _replace_portion(por, new)
+            cnt += 1
+    return cnt
+
+
+def _annotation(por, f, t):
+    """A Writer comment: its text is converted, its author and date are not."""
+    try:
+        fld = por.TextField
+        s = fld.Content
+        if s:
+            conv = convert(s, f, t)
+            if conv != s:
+                fld.Content = conv
+                return 1
+    except Exception:
+        pass
+    return 0
 
 
 def _replace_portion(por, conv):
-    """setString alone makes a run at paragraph start inherit its neighbour's attributes; save & restore them."""
-    saved = []
-    for n in _CHAR_PROPS:
-        try:
-            saved.append((n, por.getPropertyValue(n)))
-        except Exception:
-            pass
-    cur = por.getText().createTextCursorByRange(por)
-    cur.setString(conv)
-    for n, v in saved:
-        try:
-            cur.setPropertyValue(n, v)
-        except Exception:
-            pass
+    """The new text goes where it takes the portion's own attributes, then the old text goes: no attribute is copied,
+    which keeps every one of them and is 10x faster than saving and restoring them. Writer: text added where a portion
+    ends takes the neighbour's attributes, so the new text goes in after the first character and the old characters
+    around it are removed; a hyperlink does not grow over text added at its end, so a link gets its address back if it
+    lost it. Cells and shapes: text added at the end of a portion takes its attributes, and the portion's old range
+    still holds the old text."""
+    xt = por.getText()
+    if not _writer_text[0]:
+        xt.insertString(xt.createTextCursorByRange(por.getEnd()), conv, False)
+        xt.createTextCursorByRange(por).setString("")
+        return
+    try:
+        link = (por.HyperLinkURL, por.HyperLinkTarget, por.HyperLinkName)
+    except Exception:
+        link = ("", "", "")
+    cur = xt.createTextCursorByRange(por.getStart())
+    cur.goRight(1, False)
+    xt.insertString(cur, conv, False)  # the cursor moves on past the new text
+    cur.gotoRange(por.getEnd(), True)
+    cur.setString("")  # the old text after the new
+    cur = xt.createTextCursorByRange(por.getStart())
+    cur.goRight(1, True)
+    cur.setString("")  # the old first character
+    if link[0]:
+        cur = xt.createTextCursorByRange(por)
+        if cur.HyperLinkURL != link[0]:
+            cur.HyperLinkURL, cur.HyperLinkTarget, cur.HyperLinkName = link
 
 
 def _writer(doc, f, t):
     cnt = 0
-    had_sel = False
+    ranges = []
     try:
         sel = doc.CurrentController.getSelection()
         if sel is not None and sel.supportsService("com.sun.star.text.TextRanges"):
-            for i in range(sel.getCount()):
-                rng = sel.getByIndex(i)
-                if rng.getString():
-                    had_sel = True
-                    cur = rng.getText().createTextCursorByRange(rng)
-                    cnt += _xtext(cur, f, t)
+            ranges = [sel.getByIndex(i) for i in range(sel.getCount()) if sel.getByIndex(i).getString()]
     except Exception:
         pass
-    if had_sel:
-        return cnt
+    if ranges:
+        f = _resolve(f, "\n".join(r.getString() for r in ranges))
+        for rng in ranges:
+            cnt += _xtext(rng.getText().createTextCursorByRange(rng), f, t)
+        return cnt, f
+    f = _resolve(f, doc.getText().getString())
     cnt += _xtext(doc.getText(), f, t)
     for getter in ("getTextFrames", "getFootnotes", "getEndnotes"):
         try:
@@ -595,38 +695,74 @@ def _writer(doc, f, t):
                     cnt += _xtext(ps.FooterTextFirst, f, t)
     except Exception:
         pass
-    return cnt
+    return cnt, f
+
+
+def _text_cells(rng):
+    en = rng.queryContentCells(CELL_STRING).getCells().createEnumeration()
+    while en.hasMoreElements():
+        yield en.nextElement()
 
 
 def _cell_range(rng, f, t):
     cnt = 0
-    en = rng.queryContentCells(CELL_STRING).getCells().createEnumeration()
-    while en.hasMoreElements():
-        c = en.nextElement()
-        s = c.getString()
-        conv = convert(s, f, t)
-        if conv != s:
-            c.setString(conv)
-            cnt += 1
+    for c in _text_cells(rng):
+        cnt += _xtext(c, f, t)  # paragraph by paragraph: rich text in a cell keeps its formatting
+    return cnt + _comments(rng, f, t)
+
+
+def _comments(rng, f, t):
+    """Cell comments inside the range (their authors are not touched)."""
+    cnt = 0
+    try:
+        a_ = rng.getRangeAddress()
+        anns = rng.getSpreadsheet().getAnnotations()
+        for i in range(anns.getCount()):
+            a = anns.getByIndex(i)
+            p = a.getPosition()
+            if a_.StartColumn <= p.Column <= a_.EndColumn and a_.StartRow <= p.Row <= a_.EndRow:
+                s = a.getString()
+                conv = convert(s, f, t)
+                if conv != s:
+                    a.setString(conv)
+                    cnt += 1
+    except Exception:
+        pass
     return cnt
 
 
 def _calc(doc, f, t):
-    cnt = 0
     sel = doc.CurrentSelection
+    targets = []
     if sel.supportsService("com.sun.star.sheet.SheetCellRanges"):
-        for i in range(sel.getCount()):
-            cnt += _cell_range(sel.getByIndex(i), f, t)
+        targets = [sel.getByIndex(i) for i in range(sel.getCount())]
     elif sel.supportsService("com.sun.star.sheet.SheetCellRange"):
+        targets = [sel]
         single = sel.getRows().getCount() == 1 and sel.getColumns().getCount() == 1
         if single and _msg(doc, "Convert the whole sheet? (No = only the selected cell)", QUERYBOX, BUTTONS_YES_NO) == 2:
             cur = doc.CurrentController.getActiveSheet().createCursor()
             cur.gotoStartOfUsedArea(False)
             cur.gotoEndOfUsedArea(True)
-            cnt += _cell_range(cur, f, t)
-        else:
-            cnt += _cell_range(sel, f, t)
-    return cnt
+            targets = [cur]
+    sample = []
+    for rng in targets:
+        for c in _text_cells(rng):
+            sample.append(c.getString())
+            if sum(map(len, sample)) > 200000:
+                break
+    f = _resolve(f, "\n".join(sample))
+    return sum(_cell_range(rng, f, t) for rng in targets), f
+
+
+def _shapes_text(container):
+    out = []
+    for i in range(container.getCount()):
+        shp = container.getByIndex(i)
+        if shp.supportsService("com.sun.star.drawing.GroupShape"):
+            out.append(_shapes_text(shp))
+        elif shp.supportsService("com.sun.star.drawing.Text"):
+            out.append(shp.getString())
+    return "\n".join(out)
 
 
 def _shapes(container, f, t):
@@ -648,6 +784,7 @@ def _shapes(container, f, t):
 def _draw(doc, f, t):
     cnt = 0
     pages = doc.getDrawPages()
+    f = _resolve(f, "\n".join(_shapes_text(pages.getByIndex(i)) for i in range(pages.getCount())))
     for i in range(pages.getCount()):
         pg = pages.getByIndex(i)
         cnt += _shapes(pg, f, t)
@@ -657,7 +794,7 @@ def _draw(doc, f, t):
                 cnt += _shapes(np, f, t)
         except Exception:
             pass
-    return cnt
+    return cnt, f
 
 
 def _run(f, t):
@@ -665,14 +802,35 @@ def _run(f, t):
     if doc is None:
         return
     if doc.supportsService("com.sun.star.text.TextDocument"):
-        cnt = _writer(doc, f, t)
+        kind, fn = "writer", _writer
     elif doc.supportsService("com.sun.star.sheet.SpreadsheetDocument"):
-        cnt = _calc(doc, f, t)
+        kind, fn = "calc", _calc
     elif doc.supportsService("com.sun.star.drawing.DrawingDocument") or doc.supportsService("com.sun.star.presentation.PresentationDocument"):
-        cnt = _draw(doc, f, t)
+        kind, fn = "draw", _draw
     else:
         _msg(doc, "Unsupported document type", WARNINGBOX)
         return
+    _writer_text[0] = kind == "writer"
+    # one undo step for the whole run, and no layout after every change (that alone makes long paragraphs 30x
+    # slower); tracked changes would keep every old word next to its conversion, formulas need not recalculate per cell
+    um = doc.getUndoManager()
+    um.enterUndoContext("UzTranslit")
+    doc.lockControllers()
+    rec_was = doc.RecordChanges if kind == "writer" else None
+    calc_was = doc.isAutomaticCalculationEnabled() if kind == "calc" else None
+    try:
+        if kind == "writer":
+            doc.RecordChanges = False
+        if kind == "calc":
+            doc.enableAutomaticCalculation(False)
+        cnt, f = fn(doc, f, t)
+    finally:
+        if kind == "writer":
+            doc.RecordChanges = rec_was
+        if kind == "calc":
+            doc.enableAutomaticCalculation(calc_was)
+        doc.unlockControllers()
+        um.leaveUndoContext()
     _msg(doc, "%d fragment(s) converted (%s -> %s)" % (cnt, f, t))
 
 
@@ -694,6 +852,7 @@ def self_test(*a):
         (convert("Ўзбекистон Республикаси", "cyr", "lat"), "Oʻzbekiston Respublikasi"),
         (convert("Is'hoq obyekt", "lat", "cyr"), "Исҳоқ объект"),
         (convert("ŞAHAR Ishoq", "new", "lat"), "SHAHAR Isʼhoq"),
+        (_split(["Ш", "АҲАР"], "cyr", "lat"), ["SH", "AHAR"]),
     ]
     bad = [w for g, w in checks if g != w]
     _msg(doc, "UzTranslit %s: %d/%d self-checks passed" % (VERSION, len(checks) - len(bad), len(checks)))

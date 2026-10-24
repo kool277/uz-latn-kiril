@@ -23,6 +23,7 @@ Public UzOptAscii As Boolean            ' True: use ' instead of U+02BB / U+02BC
 Public UzOptKeepHardSignAfterO As Boolean ' True: Cyrillic hard sign after short u stays (mu'jiza keeps the tutuq); default drops it
 Public UzOptNoTsFinal As Boolean        ' True: never turn word-final "ts" into Cyrillic tse
 Public UzOptNoDictionary As Boolean     ' True: skip the loanword dictionary
+Public UzOptNoSkipUrls As Boolean       ' True: also convert URLs, e-mail addresses and @handles (default keeps them)
 
 ' ---------- internal tables ----------
 Private mInit As Boolean
@@ -49,16 +50,15 @@ Public Function UzConvert(ByVal Text As String, ByVal FromScript As String, ByVa
     FromScript = LCase$(FromScript): ToScript = LCase$(ToScript)
     If FromScript = "auto" Then FromScript = UzDetect(Text)
     If FromScript = ToScript Then UzConvert = Text: Exit Function
-    If FromScript = "cyr" And (ToScript = "lat" Or ToScript = "new") Then
-        UzConvert = CyrToLatin(Text, (ToScript = "new"))
-    ElseIf (FromScript = "lat" Or FromScript = "new") And ToScript = "cyr" Then
-        UzConvert = LatinToCyr(Text, (FromScript = "new"))
-    ElseIf FromScript = "lat" And ToScript = "new" Then
-        UzConvert = LatToNew(Text)
-    ElseIf FromScript = "new" And ToScript = "lat" Then
-        UzConvert = NewToLat(Text)
-    Else
+    If Not ((FromScript = "cyr" And (ToScript = "lat" Or ToScript = "new")) _
+        Or ((FromScript = "lat" Or FromScript = "new") And ToScript = "cyr") _
+        Or (FromScript = "lat" And ToScript = "new") Or (FromScript = "new" And ToScript = "lat")) Then
         Err.Raise 5, "UzTranslit", "Unknown direction " & FromScript & " -> " & ToScript
+    End If
+    If UzOptNoSkipUrls Then
+        UzConvert = ConvertSlice(Text, FromScript, ToScript)
+    Else
+        UzConvert = WithSkips(Text, FromScript, ToScript)
     End If
 End Function
 
@@ -108,6 +108,50 @@ Public Function UzDetect(ByVal Text As String) As String
     End If
 End Function
 
+' Converts the joined pieces(lo..hi) as one string and splits the result back over the pieces into outs(lo..hi), for
+' text that formatting cuts into runs: a word half bold, half plain still converts as one word, and the joined outs
+' are always exactly UzConvert of the joined pieces. A cut lands where the conversion of the text before it ends. No
+' rule looks across whitespace, so only the part of the word up to the cut is converted again, and a paragraph of
+' thousands of runs stays linear. Where a rule looks across a cut inside a word, a letter may move to the next piece.
+Public Sub UzSplitConvert(pieces() As String, outs() As String, ByVal lo As Long, ByVal hi As Long, ByVal f As String, ByVal t As String)
+    Dim P As String, Q As String, i As Long, b As Long, w As Long, safe As Long, safeLen As Long, sPrev As Long, sCur As Long
+    If hi < lo Then Exit Sub
+    ReDim outs(lo To hi)
+    For i = lo To hi
+        P = P & pieces(i)
+    Next
+    If LCase$(f) = "auto" Then f = UzDetect(P)
+    Q = UzConvert(P, f, t)
+    If Q = P Then
+        For i = lo To hi
+            outs(i) = pieces(i)
+        Next
+        Exit Sub
+    End If
+    For i = lo To hi
+        b = b + Len(pieces(i))
+        If i = hi Then
+            sCur = Len(Q)
+        Else
+            w = b                                          ' last whitespace before the cut, if after the last one known
+            Do While w > safe
+                If IsJsSpace(CodeAt(P, w)) Then Exit Do
+                w = w - 1
+            Loop
+            If w > safe Then
+                safeLen = safeLen + Len(UzConvert(Mid$(P, safe + 1, w - safe), f, t))
+                safe = w
+            End If
+            sCur = safeLen
+            If b > safe Then sCur = sCur + Len(UzConvert(Mid$(P, safe + 1, b - safe), f, t))
+            If sCur > Len(Q) Then sCur = Len(Q)
+        End If
+        If sCur < sPrev Then sCur = sPrev
+        outs(i) = Mid$(Q, sPrev + 1, sCur - sPrev)
+        sPrev = sCur
+    Next
+End Sub
+
 ' =====================================================================================
 '  DOCUMENT MACROS (Alt+F8). Selection if any, otherwise the whole document / sheet / deck.
 ' =====================================================================================
@@ -156,17 +200,24 @@ Private Sub UzDoc_Run(ByVal f As String, ByVal t As String)
     MsgBox "UzTranslit: " & cnt & " fragment(s) converted  (" & f & " -> " & t & ")", vbInformation, "UzTranslit"
 End Sub
 
-' ---------- Word: paragraph-level when formatting is uniform, run-level otherwise ----------
+' ---------- Word: every story (body, headers, footers, footnotes, text boxes...), formatting kept ----------
 Private Function UzWord_Run(ByVal app As Object, ByVal f As String, ByVal t As String) As Long
-    Dim doc As Object, sel As Object, rng As Object, story As Object
-    Dim trackWas As Boolean, cnt As Long
+    Dim doc As Object, sel As Object, rng As Object, story As Object, undoRec As Object
+    Dim trackWas As Boolean, hiddenWas As Boolean, cnt As Long, errNo As Long, errDesc As String
     Set doc = app.ActiveDocument
     Set sel = app.Selection
     On Error Resume Next
+    Set undoRec = app.UndoRecord                           ' Word 2010 and later: the whole run is one undo step
+    undoRec.StartCustomRecord "UzTranslit"
     app.ScreenUpdating = False
     trackWas = doc.TrackRevisions
     doc.TrackRevisions = False
-    On Error GoTo 0
+    hiddenWas = doc.Bookmarks.ShowHidden
+    doc.Bookmarks.ShowHidden = True                        ' hidden bookmarks (_Toc..., _Ref...) are kept too
+    On Error GoTo failed
+    If f = "auto" Then                                     ' one decision for the whole run
+        If sel.Type = 2 Then f = UzDetect(Left$(sel.Range.Text, 200000)) Else f = UzDetect(Left$(doc.Content.Text, 200000))
+    End If
     If sel.Type = 2 Then                                   ' wdSelectionNormal = text selected
         cnt = UzWord_Range(doc, sel.Range, f, t)
     Else
@@ -178,13 +229,22 @@ Private Function UzWord_Run(ByVal app As Object, ByVal f As String, ByVal t As S
             Loop Until rng Is Nothing
         Next
     End If
+cleanup:
     On Error Resume Next
+    doc.Bookmarks.ShowHidden = hiddenWas
     doc.TrackRevisions = trackWas
     app.ScreenUpdating = True
+    undoRec.EndCustomRecord
     On Error GoTo 0
+    If errNo <> 0 Then Err.Raise errNo, "UzTranslit", errDesc
     UzWord_Run = cnt
+    Exit Function
+failed:
+    errNo = Err.Number: errDesc = Err.Description
+    Resume cleanup
 End Function
 
+' paragraph by paragraph: one formatting -> rewritten at once, mixed formatting -> run by run
 Private Function UzWord_Range(ByVal doc As Object, ByVal rng As Object, ByVal f As String, ByVal t As String) As Long
     Dim para As Object, r As Object, cnt As Long, s As String, conv As String
     Dim pStart As Long, pEnd As Long
@@ -194,7 +254,7 @@ Private Function UzWord_Range(ByVal doc As Object, ByVal rng As Object, ByVal f 
         If pEnd > rng.End Then pEnd = rng.End
         If pEnd > pStart Then
             Set r = para.Range.Duplicate          ' stays inside the paragraph's story (header, footnote, text box...)
-            r.End = pEnd: r.Start = pStart
+            r.SetRange pStart, pEnd
             ' drop the paragraph / cell end marks from the range
             Do While r.End > r.Start
                 s = r.Text
@@ -205,7 +265,7 @@ Private Function UzWord_Range(ByVal doc As Object, ByVal rng As Object, ByVal f 
                 If UzWord_IsUniform(r) Then
                     s = r.Text
                     conv = UzConvert(s, f, t)
-                    If conv <> s Then r.Text = conv: cnt = cnt + 1
+                    If conv <> s Then UzWord_SetText doc, r, s, conv, f, t: cnt = cnt + 1
                 Else
                     cnt = cnt + UzWord_Runs(doc, r, f, t)
                 End If
@@ -215,10 +275,12 @@ Private Function UzWord_Range(ByVal doc As Object, ByVal rng As Object, ByVal f 
     UzWord_Range = cnt
 End Function
 
+' one formatting, and nothing that rewriting the text would destroy
 Private Function UzWord_IsUniform(ByVal r As Object) As Boolean
     Dim ok As Boolean
     On Error GoTo bad
-    ok = (r.Fields.Count = 0) And (r.Hyperlinks.Count = 0) And (r.InlineShapes.Count = 0)
+    ok = (r.Fields.Count = 0) And (r.Hyperlinks.Count = 0) And (r.InlineShapes.Count = 0) And (UzWord_CCCount(r) = 0)
+    If ok Then ok = UzWord_Plain(r.Text)
     If ok Then ok = (r.Font.Name <> "") And (r.Font.Size <> 9999999) And (r.Font.Bold <> 9999999) _
         And (r.Font.Italic <> 9999999) And (r.Font.Underline <> 9999999) And (r.Font.ColorIndex <> 9999999) _
         And (r.Font.Superscript <> 9999999) And (r.Font.Subscript <> 9999999) And (r.Font.Hidden <> 9999999) _
@@ -229,6 +291,21 @@ bad:
     UzWord_IsUniform = False
 End Function
 
+Private Function UzWord_CCCount(ByVal r As Object) As Long
+    On Error Resume Next
+    UzWord_CCCount = r.ContentControls.Count               ' Word 2007 and later; none before
+End Function
+
+' False when the text holds one of Word's special characters (picture, footnote or comment mark, field brace...)
+Private Function UzWord_Plain(ByVal s As String) As Boolean
+    Dim i As Long, c As Long
+    For i = 1 To Len(s)
+        c = CodeAt(s, i)
+        If c < 32 And c <> 9 And c <> 11 Then Exit Function
+    Next
+    UzWord_Plain = True
+End Function
+
 Private Function UzWord_FontKey(ByVal ch As Object) As String
     On Error Resume Next
     With ch.Font
@@ -237,39 +314,169 @@ Private Function UzWord_FontKey(ByVal ch As Object) As String
     End With
 End Function
 
-' mixed formatting: split into runs of identical formatting, convert each run (reverse order keeps positions valid)
+' mixed formatting: the paragraph is converted as one string (a word split across bold/plain runs keeps its context)
+' and split back over its runs of identical formatting, rewritten back to front so positions stay valid. Fields,
+' hyperlinks, pictures, content controls and special characters are never rewritten: they are runs of their own,
+' which stand for a word boundary (an optional hyphen inside a word does not). Hyperlink texts are converted on
+' their own afterwards, so the links keep their addresses.
 Private Function UzWord_Runs(ByVal doc As Object, ByVal r As Object, ByVal f As String, ByVal t As String) As Long
-    Dim ch As Object, key As String, prevKey As String
-    Dim starts() As Long, ends() As Long, nRuns As Long, i As Long, cnt As Long
-    Dim rr As Object, s As String, conv As String
-    ReDim starts(0 To 64): ReDim ends(0 To 64)
-    nRuns = 0: prevKey = Chr$(0)
+    Dim ch As Object, hl As Object, rr As Object, key As String, prevKey As String, s As String, conv As String
+    Dim cs As Long, code As Long, k As Long, prot As Boolean, soft As Boolean
+    Dim starts() As Long, ends() As Long, isText() As Boolean, allSoft() As Boolean, texts() As String, outs() As String
+    Dim spanS() As Long, spanE() As Long, nSpan As Long, nRuns As Long, i As Long, cnt As Long
+    UzWord_Spans r, spanS, spanE, nSpan
+    ReDim starts(0 To 64): ReDim ends(0 To 64): ReDim isText(0 To 64): ReDim allSoft(0 To 64)
+    prevKey = vbNullChar & "none"
     For Each ch In r.Characters
-        key = UzWord_FontKey(ch)
+        cs = ch.Start
+        s = ch.Text
+        prot = False: soft = False
+        If Len(s) > 0 Then
+            code = CodeAt(s, 1)
+            If code < 32 And code <> 9 And code <> 11 Then prot = True: soft = (code = 31)
+        End If
+        If Not prot Then
+            For k = 1 To nSpan
+                If cs >= spanS(k) And cs < spanE(k) Then prot = True: Exit For
+            Next
+        End If
+        If prot Then key = vbNullChar Else key = UzWord_FontKey(ch)
         If key <> prevKey Then
             nRuns = nRuns + 1
-            If nRuns > UBound(starts) Then ReDim Preserve starts(0 To nRuns * 2): ReDim Preserve ends(0 To nRuns * 2)
-            starts(nRuns) = ch.Start
+            If nRuns > UBound(starts) Then
+                ReDim Preserve starts(0 To 2 * nRuns): ReDim Preserve ends(0 To 2 * nRuns)
+                ReDim Preserve isText(0 To 2 * nRuns): ReDim Preserve allSoft(0 To 2 * nRuns)
+            End If
+            starts(nRuns) = cs
+            isText(nRuns) = Not prot
+            allSoft(nRuns) = True
             prevKey = key
         End If
+        If Not soft Then allSoft(nRuns) = False
         ends(nRuns) = ch.End
     Next
-    For i = nRuns To 1 Step -1
-        Set rr = r.Duplicate
-        rr.End = ends(i): rr.Start = starts(i)
-        If rr.Fields.Count = 0 And rr.Hyperlinks.Count = 0 Then
-            s = rr.Text
-            conv = UzConvert(s, f, t)
-            If conv <> s Then rr.Text = conv: cnt = cnt + 1
+    If nRuns = 0 Then Exit Function
+    ReDim texts(1 To nRuns)
+    For i = 1 To nRuns
+        If isText(i) Then
+            Set rr = r.Duplicate
+            rr.SetRange starts(i), ends(i)
+            texts(i) = rr.Text
+        ElseIf allSoft(i) Then
+            texts(i) = ""                                  ' optional hyphens: invisible, the word goes on
+        Else
+            texts(i) = ChrW(&HFFFC&)
         End If
     Next
+    UzSplitConvert texts, outs, 1, nRuns, f, t
+    For i = nRuns To 1 Step -1
+        If isText(i) And outs(i) <> texts(i) Then
+            Set rr = r.Duplicate
+            rr.SetRange starts(i), ends(i)
+            UzWord_SetText doc, rr, texts(i), outs(i), f, t
+            cnt = cnt + 1
+        End If
+    Next
+    On Error Resume Next
+    For Each hl In r.Hyperlinks
+        s = "": s = hl.TextToDisplay
+        If Len(s) > 0 Then
+            conv = UzConvert(s, f, t)
+            If conv <> s Then hl.TextToDisplay = conv: cnt = cnt + 1
+        End If
+    Next
+    On Error GoTo 0
     UzWord_Runs = cnt
 End Function
 
-' ---------- Excel: selected cells (one cell selected -> whole used range), constants only ----------
+' the character ranges that are never rewritten: fields (code and result), hyperlinks, pictures, content controls
+Private Sub UzWord_Spans(ByVal r As Object, spanS() As Long, spanE() As Long, nSpan As Long)
+    Dim kind As Long
+    ReDim spanS(0 To 8): ReDim spanE(0 To 8)
+    nSpan = 0
+    For kind = 1 To 4
+        UzWord_AddSpans r, kind, spanS, spanE, nSpan
+    Next
+End Sub
+
+Private Sub UzWord_AddSpans(ByVal r As Object, ByVal kind As Long, spanS() As Long, spanE() As Long, nSpan As Long)
+    Dim col As Object, i As Long
+    On Error GoTo done
+    Select Case kind
+        Case 1: Set col = r.Fields
+        Case 2: Set col = r.Hyperlinks
+        Case 3: Set col = r.InlineShapes
+        Case Else: Set col = r.ContentControls             ' Word 2007 and later
+    End Select
+    For i = 1 To col.Count
+        UzWord_AddSpan spanS, spanE, nSpan, col(i), kind
+    Next
+done:
+End Sub
+
+Private Sub UzWord_AddSpan(spanS() As Long, spanE() As Long, nSpan As Long, ByVal o As Object, ByVal kind As Long)
+    Dim a As Long, b As Long, e As Long
+    a = -1: b = -1
+    On Error Resume Next
+    If kind = 1 Then                                       ' a field: begin mark, code, result, end mark
+        a = o.Code.Start - 1: b = o.Code.End + 1
+        e = o.Result.End + 1
+        If e > b Then b = e
+    ElseIf kind = 4 Then                                   ' a content control with its two marks
+        a = o.Range.Start - 1: b = o.Range.End + 1
+    Else
+        a = o.Range.Start: b = o.Range.End
+    End If
+    On Error GoTo 0
+    If a < 0 Or b <= a Then Exit Sub
+    nSpan = nSpan + 1
+    If nSpan > UBound(spanS) Then ReDim Preserve spanS(0 To 2 * nSpan): ReDim Preserve spanE(0 To 2 * nSpan)
+    spanS(nSpan) = a: spanE(nSpan) = b
+End Sub
+
+' Range.Text = ... deletes the bookmarks inside the range (a table of contents points at hidden _Toc bookmarks on the
+' headings): they are put back over the new text, their ends moved by how the text before them converted
+Private Sub UzWord_SetText(ByVal doc As Object, ByVal rr As Object, ByVal oldText As String, ByVal newText As String, ByVal f As String, ByVal t As String)
+    Dim bm As Object, br As Object, bmName() As String, bs() As Long, be() As Long, n As Long, i As Long, st As Long
+    st = rr.Start
+    ReDim bmName(0 To 4): ReDim bs(0 To 4): ReDim be(0 To 4)
+    On Error Resume Next
+    For Each bm In rr.Bookmarks
+        n = n + 1
+        If n > UBound(bmName) Then ReDim Preserve bmName(0 To 2 * n): ReDim Preserve bs(0 To 2 * n): ReDim Preserve be(0 To 2 * n)
+        bmName(n) = bm.Name: bs(n) = bm.Start - st: be(n) = bm.End - st
+    Next
+    On Error GoTo 0
+    rr.Text = newText
+    On Error Resume Next
+    For i = 1 To n
+        If Not doc.Bookmarks.Exists(bmName(i)) Then
+            Set br = rr.Duplicate
+            br.SetRange st + UzWord_MapPos(oldText, newText, bs(i), f, t), st + UzWord_MapPos(oldText, newText, be(i), f, t)
+            doc.Bookmarks.Add bmName(i), br
+        End If
+    Next
+    On Error GoTo 0
+End Sub
+
+' where offset o of oldText ends up in newText
+Private Function UzWord_MapPos(ByVal oldText As String, ByVal newText As String, ByVal o As Long, ByVal f As String, ByVal t As String) As Long
+    Dim m As Long
+    If o <= 0 Then
+        m = o
+    ElseIf o >= Len(oldText) Then
+        m = o + Len(newText) - Len(oldText)
+    Else
+        m = Len(UzConvert(Left$(oldText, o), f, t))
+        If m > Len(newText) Then m = Len(newText)
+    End If
+    UzWord_MapPos = m
+End Function
+
+' ---------- Excel: selected cells (one cell selected -> whole used range), text constants only, rich text kept ----------
 Private Function UzExcel_Run(ByVal app As Object, ByVal f As String, ByVal t As String) As Long
-    Dim target As Object, txtCells As Object, c As Object, cnt As Long, v As Variant, s As String, conv As String
-    Dim singleCell As Boolean
+    Dim target As Object, txtCells As Object, c As Object, cnt As Long, v As Variant, s As String
+    Dim singleCell As Boolean, errNo As Long, errDesc As String
     On Error Resume Next
     Set target = app.Selection
     If TypeName(target) <> "Range" Then Set target = app.ActiveSheet.UsedRange
@@ -290,25 +497,122 @@ Private Function UzExcel_Run(ByVal app As Object, ByVal f As String, ByVal t As 
     If txtCells Is Nothing Then Exit Function
     On Error Resume Next
     app.ScreenUpdating = False
-    On Error GoTo 0
+    On Error GoTo failed
+    If f = "auto" Then                                     ' one decision for the whole run
+        For Each c In txtCells
+            v = c.Value
+            If VarType(v) = vbString Then s = s & v & vbLf
+            If Len(s) > 200000 Then Exit For
+        Next
+        f = UzDetect(s)
+    End If
     For Each c In txtCells
         v = c.Value
         If VarType(v) = vbString Then
-            s = v
-            conv = UzConvert(s, f, t)
-            If conv <> s Then c.Value = conv: cnt = cnt + 1
+            If Not c.HasFormula Then cnt = cnt + UzExcel_Cell(c, CStr(v), f, t)   ' a lone selected cell may hold a formula
         End If
     Next
+cleanup:
     On Error Resume Next
     app.ScreenUpdating = True
     On Error GoTo 0
+    If errNo <> 0 Then Err.Raise errNo, "UzTranslit", errDesc
     UzExcel_Run = cnt
+    Exit Function
+failed:
+    errNo = Err.Number: errDesc = Err.Description
+    Resume cleanup
 End Function
 
-' ---------- PowerPoint: every shape, group, table cell and notes page; run-level (keeps formatting) ----------
+Private Function UzExcel_Cell(ByVal c As Object, ByVal s As String, ByVal f As String, ByVal t As String) As Long
+    Dim conv As String
+    conv = UzConvert(s, f, t)
+    If conv = s Then Exit Function
+    If UzExcel_IsRich(c, Len(s)) Then
+        UzExcel_RichReplace c, s, f, t
+    Else
+        UzExcel_SetText c, conv
+    End If
+    UzExcel_Cell = 1
+End Function
+
+' the cell held text and keeps holding text: Excel would read a value like "=A1", "Mar 5" or "1e5" as a formula,
+' date or number, so such a value gets the apostrophe prefix (which is not part of the text)
+Private Sub UzExcel_SetText(ByVal c As Object, ByVal s As String)
+    Dim k As String
+    k = Left$(s, 1)
+    If k = "=" Or k = "+" Or k = "-" Or k = "@" Then
+        c.Value = "'" & s
+    Else
+        c.Value = s
+        If Len(s) > 0 Then
+            If c.HasFormula Or VarType(c.Value) <> vbString Then c.Value = "'" & s
+        End If
+    End If
+End Sub
+
+' Excel reports Null for a font property that differs inside the cell
+Private Function UzExcel_IsRich(ByVal c As Object, ByVal n As Long) As Boolean
+    On Error Resume Next
+    If n < 2 Then Exit Function
+    With c.Font
+        UzExcel_IsRich = IsNull(.Bold) Or IsNull(.Italic) Or IsNull(.Underline) Or IsNull(.Color) Or IsNull(.Size) _
+            Or IsNull(.Name) Or IsNull(.Strikethrough) Or IsNull(.Superscript) Or IsNull(.Subscript)
+    End With
+End Function
+
+Private Function UzExcel_FontKey(ByVal fnt As Object) As String
+    On Error Resume Next
+    UzExcel_FontKey = fnt.Name & "|" & fnt.Size & "|" & fnt.Bold & "|" & fnt.Italic & "|" & fnt.Underline & "|" & fnt.Color & _
+        "|" & fnt.Strikethrough & "|" & fnt.Superscript & "|" & fnt.Subscript
+End Function
+
+' rich text: each run's font is remembered, the converted text written, and every run's share gets its font back
+Private Sub UzExcel_RichReplace(ByVal c As Object, ByVal s As String, ByVal f As String, ByVal t As String)
+    Dim n As Long, k As Long, nRuns As Long, key As String, prevKey As String, conv As String
+    Dim starts() As Long, lens() As Long, texts() As String, outs() As String, fonts() As Variant
+    Dim pos As Long, i As Long, fnt As Object
+    n = Len(s)
+    ReDim starts(1 To n): ReDim lens(1 To n): ReDim fonts(1 To n)
+    prevKey = vbNullChar
+    For k = 1 To n
+        Set fnt = c.Characters(k, 1).Font
+        key = UzExcel_FontKey(fnt)
+        If key <> prevKey Then
+            nRuns = nRuns + 1
+            starts(nRuns) = k
+            fonts(nRuns) = Array(fnt.Name, fnt.Size, fnt.Bold, fnt.Italic, fnt.Underline, fnt.Color, fnt.Strikethrough, fnt.Superscript, fnt.Subscript)
+            prevKey = key
+        End If
+        lens(nRuns) = lens(nRuns) + 1
+    Next
+    ReDim texts(1 To nRuns)
+    For i = 1 To nRuns
+        texts(i) = Mid$(s, starts(i), lens(i))
+    Next
+    UzSplitConvert texts, outs, 1, nRuns, f, t
+    For i = 1 To nRuns
+        conv = conv & outs(i)
+    Next
+    UzExcel_SetText c, conv
+    pos = 1
+    For i = 1 To nRuns
+        If Len(outs(i)) > 0 Then
+            With c.Characters(pos, Len(outs(i))).Font
+                .Name = fonts(i)(0): .Size = fonts(i)(1): .Bold = fonts(i)(2): .Italic = fonts(i)(3)
+                .Underline = fonts(i)(4): .Color = fonts(i)(5): .Strikethrough = fonts(i)(6)
+                .Superscript = fonts(i)(7): .Subscript = fonts(i)(8)
+            End With
+        End If
+        pos = pos + Len(outs(i))
+    Next
+End Sub
+
+' ---------- PowerPoint: every shape, group, table cell and notes page, formatting kept ----------
 Private Function UzPpt_Run(ByVal app As Object, ByVal f As String, ByVal t As String) As Long
     Dim pres As Object, sld As Object, shp As Object, cnt As Long, notes As Object
     Set pres = app.ActivePresentation
+    If f = "auto" Then f = UzDetect(Left$(UzPpt_Sample(pres), 200000))   ' one decision for the whole run
     For Each sld In pres.Slides
         For Each shp In sld.Shapes
             cnt = cnt + UzPpt_Shape(shp, f, t)
@@ -353,20 +657,137 @@ Private Function UzPpt_Shape(ByVal shp As Object, ByVal f As String, ByVal t As 
     UzPpt_Shape = cnt
 End Function
 
+' each paragraph is converted as one string and split back over its runs, rewritten back to front
 Private Function UzPpt_TextRange(ByVal tr As Object, ByVal f As String, ByVal t As String) As Long
-    Dim i As Long, cnt As Long, run As Object, s As String, conv As String
-    For i = 1 To tr.Runs.Count
-        Set run = tr.Runs(i)
-        s = run.Text
-        conv = UzConvert(s, f, t)
-        If conv <> s Then run.Text = conv: cnt = cnt + 1
+    Dim p As Long, i As Long, n As Long, cnt As Long, para As Object, texts() As String, outs() As String
+    For p = tr.Paragraphs.Count To 1 Step -1
+        Set para = tr.Paragraphs(p)
+        n = para.Runs.Count
+        If n > 0 Then
+            ReDim texts(1 To n)
+            For i = 1 To n
+                texts(i) = para.Runs(i).Text
+            Next
+            UzSplitConvert texts, outs, 1, n, f, t
+            For i = n To 1 Step -1
+                If outs(i) <> texts(i) Then para.Runs(i).Text = outs(i): cnt = cnt + 1
+            Next
+        End If
     Next
     UzPpt_TextRange = cnt
+End Function
+
+Private Function UzPpt_Sample(ByVal pres As Object) As String
+    Dim sld As Object, shp As Object, s As String
+    On Error Resume Next
+    For Each sld In pres.Slides
+        For Each shp In sld.Shapes
+            If PptHasText(shp) Then s = s & shp.TextFrame.TextRange.Text & vbLf
+            If Len(s) > 200000 Then Exit For
+        Next
+    Next
+    UzPpt_Sample = s
 End Function
 
 ' =====================================================================================
 '  ENGINE (mirrors spec/SPEC.md section 5)
 ' =====================================================================================
+
+Private Function ConvertSlice(ByVal s As String, ByVal f As String, ByVal t As String) As String
+    If Len(s) = 0 Then Exit Function
+    If f = "cyr" Then
+        ConvertSlice = CyrToLatin(s, (t = "new"))
+    ElseIf t = "cyr" Then
+        ConvertSlice = LatinToCyr(s, (f = "new"))
+    ElseIf f = "lat" Then
+        ConvertSlice = LatToNew(s)
+    Else
+        ConvertSlice = NewToLat(s)
+    End If
+End Function
+
+' ---------- URL / e-mail protection (SPEC section 5.6) ----------
+' Tokens of the JavaScript expression (https?://|www\.)\S+|\S+@\S+\.\S+|@\w+ with JavaScript's \s and \w stay as
+' they are; the text between them is converted slice by slice. A scanner, so every host matches the reference.
+Private Function WithSkips(ByVal s As String, ByVal f As String, ByVal t As String) As String
+    Dim n As Long, p As Long, last As Long, runEnd As Long, runAt As Long, k As Long, dotPos As Long
+    Dim mEnd As Long, pre As Long, c As Long, out As String
+    n = Len(s): p = 1: last = 1: runEnd = 0
+    Do While p <= n
+        c = CodeAt(s, p)
+        If IsJsSpace(c) Then
+            p = p + 1
+        Else
+            If p >= runEnd Then
+                ' a new run of non-space characters; \S+@\S+\.\S+ matches from p to its end iff an "@" at k >= p + 1
+                ' is followed by a "." at d >= k + 2 with at least one character after it
+                runEnd = p
+                Do While runEnd <= n
+                    If IsJsSpace(CodeAt(s, runEnd)) Then Exit Do
+                    runEnd = runEnd + 1
+                Loop
+                dotPos = 0
+                For k = runEnd - 2 To p Step -1
+                    If CodeAt(s, k) = 46 Then dotPos = k: Exit For
+                Next
+                runAt = 0
+                If dotPos > 0 Then
+                    For k = dotPos - 2 To p Step -1
+                        If CodeAt(s, k) = 64 Then runAt = k: Exit For
+                    Next
+                End If
+            End If
+            mEnd = 0
+            pre = UrlPrefix(s, p, n)
+            If pre > 0 And p + pre < runEnd Then
+                mEnd = runEnd
+            ElseIf runAt >= p + 1 Then
+                mEnd = runEnd
+            ElseIf c = 64 And p < n Then
+                If IsWordChar(CodeAt(s, p + 1)) Then
+                    mEnd = p + 2
+                    Do While mEnd <= n
+                        If Not IsWordChar(CodeAt(s, mEnd)) Then Exit Do
+                        mEnd = mEnd + 1
+                    Loop
+                End If
+            End If
+            If mEnd = 0 Then
+                p = p + 1
+            Else
+                out = out & ConvertSlice(Mid$(s, last, p - last), f, t) & Mid$(s, p, mEnd - p)
+                last = mEnd: p = mEnd
+            End If
+        End If
+    Loop
+    WithSkips = out & ConvertSlice(Mid$(s, last), f, t)
+End Function
+
+' "www." -> 4, "http://" -> 7, "https://" -> 8 (case-sensitive, like the reference), else 0
+Private Function UrlPrefix(ByVal s As String, ByVal p As Long, ByVal n As Long) As Long
+    If p + 3 <= n Then
+        If Mid$(s, p, 4) = "www." Then UrlPrefix = 4: Exit Function
+    End If
+    If p + 6 <= n Then
+        If Mid$(s, p, 7) = "http://" Then UrlPrefix = 7: Exit Function
+    End If
+    If p + 7 <= n Then
+        If Mid$(s, p, 8) = "https://" Then UrlPrefix = 8: Exit Function
+    End If
+End Function
+
+' JavaScript's \s
+Private Function IsJsSpace(ByVal c As Long) As Boolean
+    Select Case c
+        Case 9 To 13, 32, &HA0&, &H1680&, &H2000& To &H200A&, &H2028&, &H2029&, &H202F&, &H205F&, &H3000&, &HFEFF&
+            IsJsSpace = True
+    End Select
+End Function
+
+' JavaScript's \w (ASCII only)
+Private Function IsWordChar(ByVal c As Long) As Boolean
+    IsWordChar = (c >= 48 And c <= 57) Or (c >= 65 And c <= 90) Or (c >= 97 And c <= 122) Or c = 95
+End Function
 
 ' ---------- Cyrillic -> Latin (toNew=False: 1995, toNew=True: 2026) ----------
 Private Function CyrToLatin(ByVal s As String, ByVal toNew As Boolean) As String
