@@ -42,7 +42,7 @@ for (const c of fixtures.cases) corpusWords.push(...c.in.split(/\s+/), ...c.out.
 const TOKENS = [
   ...'абвгдеёжзийклмнопрстуфхцчшщъыьэюяўқғҳАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЎҚҒҲ',
   ...'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZöğşçōõÖĞŞÇŌÕ',
-  ..."'ʻʼ‘’`´", ' ', ' ', ' ', '\n', '\t', ' ', ' ', '　',
+  ..."'ʻʼ‘’`´", ' ', ' ', ' ', '\n', '\t', '\u00a0', '\u2028', '\u3000',
   ...'.,;:!?-()"«»0123456789@/_#', 'http://', 'https://', 'www.', '.uz', 'mail@', '@user', '\u{1F600}', '\uD800',
   'sh', 'SH', 'Sh', 'ch', "o'", "g'", "s'h", 'ts', 'tsiya', 'tsion', 'ye', 'yo', "yo'", 'yu', 'ya',
   'kompyuter', 'obyekt', 'SIRK', 'Abzats', 'yogurt', 'ofitser', 'ShAHAR'

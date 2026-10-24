@@ -159,7 +159,7 @@ function init(): void {
   markAll(LAT_VOWELS, F_LAT_VOWEL);
   for (let i = 0; i < CYR_VOWELS.length; i++) markAll(String.fromCharCode(CYR_UPPER.charCodeAt(CYR_LOWER.indexOf(CYR_VOWELS.charAt(i)))), F_CYR_VOWEL);
   for (let i = 0; i < LAT_VOWELS.length; i++) markAll(String.fromCharCode(LAT_UPPER.charCodeAt(LAT_LOWER.indexOf(LAT_VOWELS.charAt(i)))), F_LAT_VOWEL);
-  // RegExp \s: [\t\n\v\f\r    -     　﻿]
+  // RegExp \s: [\t\n\v\f\r \u00a0 \u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]
   for (let c = 0x09; c <= 0x0D; c++) markCode(c, F_SPACE);
   for (let c = 0x2000; c <= 0x200A; c++) markCode(c, F_SPACE);
   markCode(0x20, F_SPACE); markCode(0xA0, F_SPACE); markCode(0x1680, F_SPACE); markCode(0x2028, F_SPACE);
