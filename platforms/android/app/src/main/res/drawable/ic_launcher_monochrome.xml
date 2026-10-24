@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Themed (monochrome) icon: Ö -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M37,58.5 A17,20.5 0 1,0 71,58.5 A17,20.5 0 1,0 37,58.5 Z M45.5,58.5 A8.5,14 0 1,0 62.5,58.5 A8.5,14 0 1,0 45.5,58.5 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42.2,31.5 A3.8,3.8 0 1,0 49.8,31.5 A3.8,3.8 0 1,0 42.2,31.5 Z M58.2,31.5 A3.8,3.8 0 1,0 65.8,31.5 A3.8,3.8 0 1,0 58.2,31.5 Z" />
+</vector>

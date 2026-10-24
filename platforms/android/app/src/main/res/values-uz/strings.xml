@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Oʻzbekcha (lotin 1995: ʻ U+02BB, ʼ U+02BC). Har bir satr values/strings.xml dagi kalit bilan bir xil. -->
+<resources>
+    <string name="action_process_text">UzTranslit bilan oʻgirish</string>
+
+    <string name="script_auto">Avto</string>
+    <string name="script_cyr">Кирилл</string>
+    <string name="script_lat">Lotin 1995</string>
+    <string name="script_new">Yangi lotin</string>
+    <string name="name_cyr">kirill</string>
+    <string name="name_lat">lotin 1995</string>
+    <string name="name_new">yangi lotin</string>
+
+    <string name="from_label">Qaysi alifbodan</string>
+    <string name="to_label">Qaysi alifboga</string>
+    <string name="swap">Almashtirish</string>
+    <string name="open_file">Faylni oʻgirish</string>
+    <string name="input_label">Kiritish</string>
+    <string name="input_placeholder">Matnni shu yerga yozing yoki qoʻying — natija darhol chiqadi. Masalan: O\'zbekiston Respublikasi, Toshkent shahri.</string>
+    <string name="result_label">Natija</string>
+    <string name="paste">Qoʻyish</string>
+    <string name="clear">Tozalash</string>
+    <string name="copy">Nusxalash</string>
+    <string name="copied">Nusxalandi</string>
+    <string name="share">Ulashish</string>
+    <string name="share_result">Natijani ulashish</string>
+    <string name="nothing_to_paste">Buferda matn yoʻq</string>
+    <string name="text_too_large">Matn bufer yoki ulashish uchun juda uzun: uni fayl sifatida oʻgiring.</string>
+    <string name="detected">aniqlandi: %1$s</string>
+    <string name="direction">%1$s → %2$s</string>
+    <string name="same_script">Manba va natija alifbosi bir xil: matn oʻzgarmaydi.</string>
+    <string name="ascii_apostrophe">Oddiy apostrof ( \' )</string>
+    <plurals name="chars_count">
+        <item quantity="one">%d belgi</item>
+        <item quantity="other">%d belgi</item>
+    </plurals>
+    <plurals name="words_count">
+        <item quantity="one">%d soʻz</item>
+        <item quantity="other">%d soʻz</item>
+    </plurals>
+    <string name="stats">%1$s · %2$s</string>
+
+    <string name="settings">Sozlamalar</string>
+    <string name="back">Orqaga</string>
+    <string name="settings_target">Natija alifbosi</string>
+    <string name="settings_target_summary">Asosiy ekran, bufer tugmasi va boshqa ilovalarda belgilangan matn shu alifboga oʻgiriladi.</string>
+    <string name="settings_apostrophe">Apostrof uslubi</string>
+    <string name="settings_apostrophe_typographic">Tipografik: Oʻzbekiston, maʼno ( ʻ ʼ )</string>
+    <string name="settings_apostrophe_ascii">Oddiy: O\'zbekiston, ma\'no ( \' )</string>
+    <string name="settings_rules">Oʻgirish qoidalari</string>
+    <string name="settings_dictionary">Oʻzlashma soʻzlar lugʻati</string>
+    <string name="settings_dictionary_summary">Lotindan kirillga: obyekt → объект, sirk → цирк, kompyuter → компьютер</string>
+    <string name="settings_drop_hard">ўъ → oʻ</string>
+    <string name="settings_drop_hard_summary">мўъжиза → moʻjiza (oʻchirilsa: moʻʼjiza)</string>
+    <string name="settings_about">Ilova haqida</string>
+    <string name="settings_about_text">UzTranslit oʻzbek matnini kirill, 1995-yilgi lotin va 2026-yilgi yangi lotin (OʻRQ-1184: Ö Ğ Ş Ç) alifbolari orasida oʻgiradi. Hammasi qurilmangizda bajariladi: matn hech qayerga yuborilmaydi.</string>
+    <string name="settings_version">Versiya %1$s · oʻgirish qoidalari: spec v%2$s</string>
+    <string name="settings_web">latin.jaybi.uz — Word, Excel va LibreOffice hujjatlarini ham oʻgiradi</string>
+
+    <string name="process_replace">Oʻrniga qoʻyish</string>
+    <string name="process_readonly">Bu ilova belgilangan matnni almashtirishga ruxsat bermaydi: natijani nusxalang yoki ulashing.</string>
+    <string name="cancel">Bekor qilish</string>
+
+    <string name="tile_label">Buferni oʻgirish</string>
+    <string name="tile_subtitle">→ %1$s</string>
+    <string name="clipboard_empty">Buferda matn yoʻq</string>
+    <string name="clipboard_done">Bufer oʻgirildi: %1$s → %2$s</string>
+    <string name="clipboard_same">Buferdagi matn allaqachon %1$s alifbosida</string>
+
+    <string name="file_title">Faylni oʻgirish</string>
+    <string name="file_to">Qaysi alifboga</string>
+    <string name="file_preview">Koʻrinishi</string>
+    <plurals name="file_preview_truncated">
+        <item quantity="one">Dastlabki %d belgi koʻrsatilgan.</item>
+        <item quantity="other">Dastlabki %d belgi koʻrsatilgan.</item>
+    </plurals>
+    <string name="file_save">%1$s sifatida saqlash</string>
+    <string name="file_saving">Saqlanmoqda…</string>
+    <string name="file_saved">Saqlandi: %1$s</string>
+    <string name="file_done">Tayyor</string>
+    <string name="file_loading">Fayl oʻqilmoqda…</string>
+    <string name="file_converting">Oʻgirilmoqda…</string>
+    <string name="file_encoding_legacy">Fayl Windows-1251 kodlashida; natija UTF-8 da saqlanadi.</string>
+    <string name="file_error_read">Faylni oʻqib boʻlmadi.</string>
+    <string name="file_error_too_large">Fayl juda katta: koʻpi bilan %1$d MB.</string>
+    <string name="file_error_save">Faylni saqlab boʻlmadi.</string>
+    <string name="file_error_type">Bu yerda faqat oddiy matnli fayllar oʻgiriladi: .txt, .md, .srt, .csv.</string>
+    <string name="size_b">%1$s B</string>
+    <string name="size_kb">%1$s KB</string>
+    <string name="size_mb">%1$s MB</string>
+</resources>

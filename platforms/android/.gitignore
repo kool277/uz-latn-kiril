@@ -1,0 +1,16 @@
+# Gradle and Android build output
+.gradle/
+.kotlin/
+build/
+/captures/
+*.apk
+*.aab
+*.ap_
+*.dex
+# machine-specific: Android SDK location
+local.properties
+# IDEs
+.idea/
+*.iml
+.cxx/
+.externalNativeBuild/

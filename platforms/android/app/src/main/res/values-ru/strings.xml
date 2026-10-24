@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Русский. Те же ключи, что в values/strings.xml. -->
+<resources>
+    <string name="action_process_text">Конвертировать через UzTranslit</string>
+
+    <string name="script_auto">Авто</string>
+    <string name="script_cyr">Кириллица</string>
+    <string name="script_lat">Латиница 1995</string>
+    <string name="script_new">Новая латиница</string>
+    <string name="name_cyr">кириллица</string>
+    <string name="name_lat">латиница 1995</string>
+    <string name="name_new">новая латиница</string>
+
+    <string name="from_label">Исходный алфавит</string>
+    <string name="to_label">Целевой алфавит</string>
+    <string name="swap">Поменять местами</string>
+    <string name="open_file">Конвертировать файл</string>
+    <string name="input_label">Исходный текст</string>
+    <string name="input_placeholder">Введите или вставьте текст — результат появится сразу. Например: O\'zbekiston Respublikasi, Toshkent shahri.</string>
+    <string name="result_label">Результат</string>
+    <string name="paste">Вставить</string>
+    <string name="clear">Очистить</string>
+    <string name="copy">Копировать</string>
+    <string name="copied">Скопировано</string>
+    <string name="share">Поделиться</string>
+    <string name="share_result">Поделиться результатом</string>
+    <string name="nothing_to_paste">В буфере обмена нет текста</string>
+    <string name="text_too_large">Текст слишком длинный для буфера обмена и отправки: конвертируйте его как файл.</string>
+    <string name="detected">определено: %1$s</string>
+    <string name="direction">%1$s → %2$s</string>
+    <string name="same_script">Исходный и целевой алфавиты совпадают: текст не меняется.</string>
+    <string name="ascii_apostrophe">Простой апостроф ( \' )</string>
+    <plurals name="chars_count">
+        <item quantity="one">%d символ</item>
+        <item quantity="few">%d символа</item>
+        <item quantity="many">%d символов</item>
+        <item quantity="other">%d символа</item>
+    </plurals>
+    <plurals name="words_count">
+        <item quantity="one">%d слово</item>
+        <item quantity="few">%d слова</item>
+        <item quantity="many">%d слов</item>
+        <item quantity="other">%d слова</item>
+    </plurals>
+    <string name="stats">%1$s · %2$s</string>
+
+    <string name="settings">Настройки</string>
+    <string name="back">Назад</string>
+    <string name="settings_target">Целевой алфавит</string>
+    <string name="settings_target_summary">В этот алфавит конвертируют главный экран, плитка буфера обмена и текст, выделенный в других приложениях.</string>
+    <string name="settings_apostrophe">Стиль апострофа</string>
+    <string name="settings_apostrophe_typographic">Типографский: Oʻzbekiston, maʼno ( ʻ ʼ )</string>
+    <string name="settings_apostrophe_ascii">Простой: O\'zbekiston, ma\'no ( \' )</string>
+    <string name="settings_rules">Правила конвертации</string>
+    <string name="settings_dictionary">Словарь заимствований</string>
+    <string name="settings_dictionary_summary">Латиница → кириллица: obyekt → объект, sirk → цирк, kompyuter → компьютер</string>
+    <string name="settings_drop_hard">ўъ → oʻ</string>
+    <string name="settings_drop_hard_summary">мўъжиза → moʻjiza (если выключено: moʻʼjiza)</string>
+    <string name="settings_about">О приложении</string>
+    <string name="settings_about_text">UzTranslit конвертирует узбекский текст между кириллицей, латиницей 1995 года и новой латиницей 2026 года (закон ЗРУ-1184: Ö Ğ Ş Ç). Всё выполняется на устройстве: текст никуда не отправляется.</string>
+    <string name="settings_version">Версия %1$s · правила конвертации: spec v%2$s</string>
+    <string name="settings_web">latin.jaybi.uz — конвертирует и документы Word, Excel, LibreOffice</string>
+
+    <string name="process_replace">Заменить</string>
+    <string name="process_readonly">Это приложение не позволяет заменить выделенный текст: скопируйте результат или поделитесь им.</string>
+    <string name="cancel">Отмена</string>
+
+    <string name="tile_label">Конвертировать буфер</string>
+    <string name="tile_subtitle">→ %1$s</string>
+    <string name="clipboard_empty">В буфере обмена нет текста</string>
+    <string name="clipboard_done">Буфер обмена: %1$s → %2$s</string>
+    <string name="clipboard_same">Текст в буфере обмена уже в нужном алфавите: %1$s</string>
+
+    <string name="file_title">Конвертировать файл</string>
+    <string name="file_to">Целевой алфавит</string>
+    <string name="file_preview">Предпросмотр</string>
+    <plurals name="file_preview_truncated">
+        <item quantity="one">Показан первый %d символ.</item>
+        <item quantity="few">Показаны первые %d символа.</item>
+        <item quantity="many">Показаны первые %d символов.</item>
+        <item quantity="other">Показаны первые %d символа.</item>
+    </plurals>
+    <string name="file_save">Сохранить как %1$s</string>
+    <string name="file_saving">Сохранение…</string>
+    <string name="file_saved">Сохранено: %1$s</string>
+    <string name="file_done">Готово</string>
+    <string name="file_loading">Чтение файла…</string>
+    <string name="file_converting">Конвертация…</string>
+    <string name="file_encoding_legacy">Файл в кодировке Windows-1251; результат будет сохранён в UTF-8.</string>
+    <string name="file_error_read">Не удалось прочитать файл.</string>
+    <string name="file_error_too_large">Файл слишком большой: не более %1$d МБ.</string>
+    <string name="file_error_save">Не удалось сохранить файл.</string>
+    <string name="file_error_type">Здесь конвертируются только обычные текстовые файлы: .txt, .md, .srt, .csv.</string>
+    <string name="size_b">%1$s Б</string>
+    <string name="size_kb">%1$s КБ</string>
+    <string name="size_mb">%1$s МБ</string>
+</resources>

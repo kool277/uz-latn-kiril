@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The window behind Compose (Compose draws the Material 3 theme itself: ui/theme/Theme.kt). -->
+    <style name="Theme.UzTranslit" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <!-- Dialog over the calling app (converting selected text): Compose shows the dialog window itself. -->
+    <style name="Theme.UzTranslit.Translucent" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <!-- Invisible window for the Quick Settings tile: it only has to get window focus to read the clipboard. -->
+    <style name="Theme.UzTranslit.Invisible" parent="Theme.UzTranslit.Translucent">
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+</resources>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- English (default and fallback). Every string here is also in values-uz (Uzbek, Latin 1995) and values-ru. -->
+<resources>
+    <string name="app_name" translatable="false">UzTranslit</string>
+    <string name="action_process_text">Convert with UzTranslit</string>
+
+    <!-- alphabets: labels of the segmented controls, and names used inside sentences -->
+    <string name="script_auto">Auto</string>
+    <string name="script_cyr">Cyrillic</string>
+    <string name="script_lat">Latin 1995</string>
+    <string name="script_new">Latin 2026</string>
+    <string name="name_cyr">Cyrillic</string>
+    <string name="name_lat">Latin 1995</string>
+    <string name="name_new">Latin 2026</string>
+
+    <!-- main screen -->
+    <string name="from_label">From</string>
+    <string name="to_label">To</string>
+    <string name="swap">Swap</string>
+    <string name="open_file">Convert a file</string>
+    <string name="input_label">Input</string>
+    <string name="input_placeholder">Type or paste text — the result appears instantly. E.g.: O\'zbekiston Respublikasi, Toshkent shahri.</string>
+    <string name="result_label">Result</string>
+    <string name="paste">Paste</string>
+    <string name="clear">Clear</string>
+    <string name="copy">Copy</string>
+    <string name="copied">Copied</string>
+    <string name="share">Share</string>
+    <string name="share_result">Share the result</string>
+    <string name="nothing_to_paste">The clipboard has no text</string>
+    <string name="text_too_large">The text is too long for the clipboard or the share sheet: convert it as a file instead.</string>
+    <string name="detected">detected: %1$s</string>
+    <string name="direction">%1$s → %2$s</string>
+    <string name="same_script">Source and target alphabet are the same: the text stays as it is.</string>
+    <string name="ascii_apostrophe">Plain apostrophe ( \' )</string>
+    <plurals name="chars_count">
+        <item quantity="one">%d character</item>
+        <item quantity="other">%d characters</item>
+    </plurals>
+    <plurals name="words_count">
+        <item quantity="one">%d word</item>
+        <item quantity="other">%d words</item>
+    </plurals>
+    <string name="stats">%1$s · %2$s</string>
+
+    <!-- settings -->
+    <string name="settings">Settings</string>
+    <string name="back">Back</string>
+    <string name="settings_target">Target alphabet</string>
+    <string name="settings_target_summary">The main screen, the clipboard tile and selected text in other apps convert to this alphabet.</string>
+    <string name="settings_apostrophe">Apostrophe style</string>
+    <string name="settings_apostrophe_typographic">Typographic: Oʻzbekiston, maʼno ( ʻ ʼ )</string>
+    <string name="settings_apostrophe_ascii">Plain: O\'zbekiston, ma\'no ( \' )</string>
+    <string name="settings_rules">Conversion rules</string>
+    <string name="settings_dictionary">Loanword dictionary</string>
+    <string name="settings_dictionary_summary">Latin → Cyrillic: obyekt → объект, sirk → цирк, kompyuter → компьютер</string>
+    <string name="settings_drop_hard">ўъ → oʻ</string>
+    <string name="settings_drop_hard_summary">мўъжиза → moʻjiza (when off: moʻʼjiza)</string>
+    <string name="settings_about">About</string>
+    <string name="settings_about_text">UzTranslit converts Uzbek text between Cyrillic, Latin 1995 and Latin 2026 (law OʻRQ-1184: Ö Ğ Ş Ç). Everything happens on your device: no text is sent anywhere.</string>
+    <string name="settings_version">Version %1$s · conversion rules: spec v%2$s</string>
+    <string name="settings_web">latin.jaybi.uz — also converts Word, Excel and LibreOffice documents</string>
+
+    <!-- converting selected text in another app (ACTION_PROCESS_TEXT) -->
+    <string name="process_replace">Replace</string>
+    <string name="process_readonly">This app does not let UzTranslit replace the selected text: copy or share the result.</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- Quick Settings tile -->
+    <string name="tile_label">Convert clipboard</string>
+    <string name="tile_subtitle">→ %1$s</string>
+    <string name="clipboard_empty">The clipboard has no text</string>
+    <string name="clipboard_done">Clipboard converted: %1$s → %2$s</string>
+    <string name="clipboard_same">The clipboard text is already in %1$s</string>
+
+    <!-- converting a shared or opened file -->
+    <string name="file_title">Convert a file</string>
+    <string name="file_to">Convert to</string>
+    <string name="file_preview">Preview</string>
+    <plurals name="file_preview_truncated">
+        <item quantity="one">Showing the first %d character.</item>
+        <item quantity="other">Showing the first %d characters.</item>
+    </plurals>
+    <string name="file_save">Save as %1$s</string>
+    <string name="file_saving">Saving…</string>
+    <string name="file_saved">Saved: %1$s</string>
+    <string name="file_done">Done</string>
+    <string name="file_loading">Reading the file…</string>
+    <string name="file_converting">Converting…</string>
+    <string name="file_encoding_legacy">The file is in the Windows-1251 encoding; the result is saved as UTF-8.</string>
+    <string name="file_error_read">The file could not be read.</string>
+    <string name="file_error_too_large">The file is too large: up to %1$d MB.</string>
+    <string name="file_error_save">The file could not be saved.</string>
+    <string name="file_error_type">Only plain text files can be converted here: .txt, .md, .srt, .csv.</string>
+    <string name="size_b">%1$s B</string>
+    <string name="size_kb">%1$s KB</string>
+    <string name="size_mb">%1$s MB</string>
+</resources>

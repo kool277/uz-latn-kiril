@@ -27,6 +27,12 @@ if command -v soffice >/dev/null 2>&1 && python3 -c "import uno" 2>/dev/null; th
 else
   echo "== LibreOffice not available: Basic suite skipped"
 fi
+if [ -n "${JAVA_HOME:-}" ] && { [ -n "${ANDROID_HOME:-}" ] || [ -f "$ROOT/platforms/android/local.properties" ]; }; then
+  echo "== Kotlin core + Android app (platforms/android: fixtures, differential, unit tests)"
+  ( cd "$ROOT/platforms/android" && ./gradlew --no-daemon -q test ) > "$ROOT/build/android-test.log" 2>&1 && echo "gradle test: ok" || { tail -30 "$ROOT/build/android-test.log"; fail=1; }
+else
+  echo "== Android SDK or JDK not configured (JAVA_HOME, ANDROID_HOME): Kotlin core skipped"
+fi
 if command -v swift >/dev/null 2>&1 || docker image inspect swift:6.4.1-noble >/dev/null 2>&1; then
   echo "== Swift core (platforms/ios: fixtures + differential)"
   if "$ROOT/platforms/ios/scripts/test.sh" > "$ROOT/build/swift-test.log" 2>&1; then
