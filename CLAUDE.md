@@ -52,10 +52,15 @@ profile — installing the test library there replaces the user's My Macros ▸ 
   installs the only Trusted Types policy (same-origin `.js` script URLs). Never use `innerHTML`/`bypassSecurityTrust*`,
   never load third-party resources; `scripts/csp-hash.mjs` (postbuild) allows Angular's inline import map by hash.
 - URLs inside the app are relative (`wasm/…`, `downloads/…`): the site runs under `/` and under `/<repo>/`.
-- UI strings live in `services/i18n.service.ts` (uz first, en second); every user-facing error is an `err.*` key.
+- UI strings live in `src/app/i18n/`: `uz.ts` (Latin 1995, default and reference), `uz-new.ts` (Latin 2026), `ru.ts`, `en.ts`.
+  A new key goes into all four (TypeScript enforces it; `app.spec.ts` checks placeholders match). Make `uz-new` strings by
+  converting the `uz` ones with the engine (lat → new, `{placeholders}` protected), then review: examples of the old
+  spelling (Isʼhoq → Ishoq) must stay. Russian counts use «символов: N» so no plural forms are needed.
+  Every user-facing error is an `err.*` key. `?lang=uz|uz-new|ru|en` picks the language; a Russian-first browser gets `ru`.
 
 ## Conventions
-- UI language: Uzbek (Latin), English fallback. Labels: Кирилл / Lotin 1995 / Yangi lotin.
+- UI language: Uzbek (Latin), English fallback; the web app also has Uzbek Latin 2026 and Russian (asked for by the
+  user on 2026-10-24). Labels: Кирилл / Lotin 1995 / Yangi lotin (Кириллица / Латиница 1995 / Новая латиница in Russian).
 - Conventional commits; one phase per commit; update `README.md` platform table with every platform change.
 - Web: deployed by `.github/workflows/deploy-pages.yml` after CI passes on main (custom domain: `docs/DNS.md`);
   keep `web/public/CNAME`.

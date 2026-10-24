@@ -40,6 +40,7 @@ U.detect('Toşkent');                                  // "new"
 
 Type or paste text — or drop files. Everything runs in the browser: the WebAssembly engine runs in a pool of
 Web Workers (one per CPU core, up to 8), so nothing is uploaded and large batches use the whole machine.
+Interface languages: Oʻzbekcha (Latin 1995, default), Özbekça (Latin 2026), Русский, English — `?lang=ru` etc.
 
 | Files | What changes | What stays exactly as it was |
 |---|---|---|

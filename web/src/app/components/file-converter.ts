@@ -45,9 +45,10 @@ export class FileConverter {
   }
 
   protected size(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+    const t = this.i18n;
+    if (bytes < 1024) return `${t.num(bytes)} ${t.t('unit.b')}`;
+    if (bytes < 1024 * 1024) return `${t.num(bytes / 1024, 1)} ${t.t('unit.kb')}`;
+    return `${t.num(bytes / 1024 / 1024, 1)} ${t.t('unit.mb')}`;
   }
 
   protected name(script: string): string {

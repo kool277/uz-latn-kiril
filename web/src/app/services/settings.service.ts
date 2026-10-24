@@ -1,6 +1,7 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
+import { Meta, Title } from '@angular/platform-browser';
 import { ConvertOptions, Script, Source } from '../engine/types';
-import { I18nService, Lang } from './i18n.service';
+import { I18nService, isLang, Lang } from './i18n.service';
 
 const SCRIPTS: readonly Script[] = ['cyr', 'lat', 'new'];
 const KEY = 'uzt.settings.v1';
@@ -17,6 +18,14 @@ interface Stored {
   lang: Lang;
 }
 
+/** ?lang=… in the address, then the remembered choice, then a Russian-first browser; otherwise Uzbek. */
+function initialLang(saved: unknown): Lang {
+  const q = new URLSearchParams(location.search).get('lang');
+  if (isLang(q)) return q;
+  if (isLang(saved)) return saved;
+  return /^ru\b/i.test(navigator.languages?.[0] ?? navigator.language ?? '') ? 'ru' : 'uz';
+}
+
 function load(): Partial<Stored> {
   try {
     const raw = localStorage.getItem(KEY);
@@ -31,6 +40,8 @@ function load(): Partial<Stored> {
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
   private readonly i18n = inject(I18nService);
+  private readonly title = inject(Title);
+  private readonly meta = inject(Meta);
   private readonly saved = load();
 
   readonly from = signal<Source>(this.saved.from === 'auto' || SCRIPTS.includes(this.saved.from as Script) ? this.saved.from! : 'auto');
@@ -55,7 +66,7 @@ export class SettingsService {
   readonly key = computed(() => JSON.stringify([this.from(), this.to(), this.options()]));
 
   constructor() {
-    if (this.saved.lang === 'en' || this.saved.lang === 'uz') this.i18n.lang.set(this.saved.lang);
+    this.i18n.lang.set(initialLang(this.saved.lang));
     effect(() => {
       const s: Stored = {
         from: this.from(), to: this.to(), ascii: this.ascii(), skipUrls: this.skipUrls(), dictionary: this.dictionary(),
@@ -68,7 +79,11 @@ export class SettingsService {
       if (t) document.documentElement.setAttribute('data-theme', t);
       else document.documentElement.removeAttribute('data-theme');
     });
-    effect(() => document.documentElement.setAttribute('lang', this.i18n.lang() === 'uz' ? 'uz-Latn' : 'en'));
+    effect(() => {
+      document.documentElement.setAttribute('lang', this.i18n.info().htmlLang);
+      this.title.setTitle(this.i18n.t('doc.title'));
+      this.meta.updateTag({ name: 'description', content: this.i18n.t('doc.description') });
+    });
   }
 
   /** ?text=…&from=…&to=… deep links; returns the text to put in the editor. */

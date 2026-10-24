@@ -2,6 +2,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { App } from './app';
 import { EngineService } from './services/engine.service';
+import { LANGS, MESSAGES } from './services/i18n.service';
 import { SettingsService } from './services/settings.service';
 
 /** Workers and WebAssembly live in the e2e tests; here the engine is a stub that upper-cases. */
@@ -52,9 +53,41 @@ describe('App', () => {
     await fixture.whenStable();
     expect(el.querySelector('#panel-files')!.hasAttribute('hidden')).toBe(false);
     expect(el.querySelector('#panel-text')!.hasAttribute('hidden')).toBe(true);
-    [...el.querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent?.trim() === 'English')!.click();
-    await fixture.whenStable();
-    expect(el.querySelector('#tab-files')!.textContent?.trim()).toBe('Files');
+    const select = el.querySelector<HTMLSelectElement>('[data-testid=lang]')!;
+    for (const [lang, files, paste, htmlLang, title] of [
+      ['en', 'Files', 'Paste', 'en', 'Uzbek alphabet converter'],
+      ['ru', 'Файлы', 'Вставить', 'ru', 'конвертер узбекского алфавита'],
+      ['uz-new', 'Fayllar', 'Qöyiş', 'uz-Latn', 'Özbek alifbo konvertori'],
+      ['uz', 'Fayllar', 'Qoʻyish', 'uz-Latn', 'Oʻzbek alifbo konvertori']
+    ]) {
+      select.value = lang;
+      select.dispatchEvent(new Event('change'));
+      await fixture.whenStable();
+      expect(el.querySelector('#tab-files')!.textContent?.trim()).toBe(files);
+      expect([...el.querySelectorAll('button')].some(b => b.textContent?.trim() === paste)).toBe(true);
+      expect(document.documentElement.lang).toBe(htmlLang);
+      expect(document.title).toContain(title);
+    }
+  });
+});
+
+describe('message tables', () => {
+  const keys = Object.keys(MESSAGES.uz).sort();
+  const placeholders = (s: string) => (s.match(/\{\w+\}/g) ?? []).sort().join(' ');
+
+  it.each(LANGS.map(l => l.id))('%s has every key, with the same placeholders', id => {
+    const table = MESSAGES[id] as Record<string, string>;
+    expect(Object.keys(table).sort()).toEqual(keys);
+    for (const k of keys) expect(placeholders(table[k]), k).toBe(placeholders((MESSAGES.uz as Record<string, string>)[k]));
+  });
+
+  it('Latin 2026 uses the new letters, except in examples of the old spelling', () => {
+    // the placeholder's input example, and Isʼhoq → Ishoq (in 2026 Latin "sh" is s+h, since ş is the letter)
+    const oldSpellingExamples = ["O'zbekiston Respublikasi, Toshkent shahri", '«Isʼhoq» → «Ishoq»'];
+    for (const [k, v] of Object.entries(MESSAGES['uz-new'])) {
+      const rest = oldSpellingExamples.reduce((s, e) => s.replace(e, ''), v).replace(/\{\w+\}/g, '');
+      expect(/[OoGg][ʻ'‘’]|[Ss][Hh]|[Cc][Hh]/.test(rest), `${k}: ${v}`).toBe(false);
+    }
   });
 });
 

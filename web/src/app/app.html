@@ -1,9 +1,14 @@
 <header class="top">
-  <h1><span class="accent">Lotin</span> · Kirill · Yangi lotin</h1>
+  <h1><span class="accent">{{ i18n.t('app.h1Accent') }}</span>{{ i18n.t('app.h1Rest') }}</h1>
   <p class="sub">{{ i18n.t('app.subtitle') }}</p>
   <span class="spacer"></span>
   <span class="engine" [title]="i18n.t('engine.title')" data-testid="engine">{{ engineLabel() }}</span>
-  <button type="button" class="btn small" (click)="toggleLang()" [attr.aria-label]="i18n.t('app.langLabel')">{{ i18n.t('app.lang') }}</button>
+  <select class="lang" data-testid="lang" [attr.aria-label]="i18n.t('app.langLabel')" [title]="i18n.t('app.langLabel')"
+          (change)="setLang($any($event.target).value)">
+    @for (l of langs; track l.id) {
+      <option [value]="l.id" [attr.lang]="l.htmlLang" [selected]="l.id === i18n.lang()">{{ l.name }}</option>
+    }
+  </select>
   <button type="button" class="btn icon" (click)="toggleTheme()" [attr.aria-label]="i18n.t('app.theme')" [title]="i18n.t('app.theme')">◐</button>
 </header>
 

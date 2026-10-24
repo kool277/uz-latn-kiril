@@ -70,7 +70,7 @@ export class TextConverter {
   }
 
   private stats(text: string): string {
-    return this.i18n.t('text.stats', { chars: text.length.toLocaleString(), words: countWords(text).toLocaleString() });
+    return this.i18n.t('text.stats', { chars: this.i18n.num(text.length), words: this.i18n.num(countWords(text)) });
   }
 
   private schedule(text: string): void {

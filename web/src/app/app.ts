@@ -6,7 +6,7 @@ import { FileConverter } from './components/file-converter';
 import { TextConverter } from './components/text-converter';
 import { EngineService } from './services/engine.service';
 import { FileJobsService } from './services/file-jobs.service';
-import { I18nService } from './services/i18n.service';
+import { I18nService, isLang, LANGS } from './services/i18n.service';
 import { SettingsService } from './services/settings.service';
 import { ToastService } from './services/toast.service';
 
@@ -30,6 +30,7 @@ export class App {
   private readonly jobs = inject(FileJobsService);
 
   protected readonly tab = signal<Tab>('text');
+  protected readonly langs = LANGS;
   protected readonly repo = REPO_URL;
   protected readonly version = '1.0.0';
   protected readonly engineLabel = computed(() => {
@@ -55,8 +56,8 @@ export class App {
     this.settings.theme.set(cur ? (cur === 'dark' ? 'light' : 'dark') : dark ? 'light' : 'dark');
   }
 
-  protected toggleLang(): void {
-    this.i18n.lang.update(l => (l === 'uz' ? 'en' : 'uz'));
+  protected setLang(value: string): void {
+    if (isLang(value)) this.i18n.lang.set(value);
   }
 
   // files dropped anywhere on the page go to the Files tab

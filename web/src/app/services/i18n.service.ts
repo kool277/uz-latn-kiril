@@ -1,214 +1,51 @@
-import { Injectable, signal } from '@angular/core';
+import { computed, Injectable, signal } from '@angular/core';
+import { en } from '../i18n/en';
+import { ru } from '../i18n/ru';
+import { MessageKey, uz } from '../i18n/uz';
+import { uzNew } from '../i18n/uz-new';
 
-export type Lang = 'uz' | 'en';
+export type Lang = 'uz' | 'uz-new' | 'ru' | 'en';
+export type { MessageKey };
 
-const uz = {
-  'app.subtitle': 'Oʻzbek alifbo konvertori — OʻRQ-1184 (Ö Ğ Ş Ç) bilan mos',
-  'app.theme': 'Mavzuni almashtirish',
-  'app.lang': 'English',
-  'app.langLabel': 'Interfeys tili',
-  'tab.label': 'Boʻlim',
-  'tab.text': 'Matn',
-  'tab.files': 'Fayllar',
-  'dir.label': 'Yoʻnalish',
-  'dir.from': 'Qaysi alifbodan',
-  'dir.to': 'Qaysi alifboga',
-  'dir.swap': 'Almashtirish',
-  'script.auto': 'Avto',
-  'script.cyr': 'Кирилл',
-  'script.lat': 'Lotin 1995',
-  'script.new': 'Yangi lotin',
-  'name.cyr': 'kirill',
-  'name.lat': 'lotin 1995',
-  'name.new': 'yangi lotin',
-  'opt.ascii': 'oddiy apostrof ( \' )',
-  'opt.urls': 'URL va e-mailga tegmaslik',
-  'opt.more': 'Qoʻshimcha qoidalar',
-  'opt.dictionary': 'Lugʻat: obyekt → объект, sirk → цирк',
-  'opt.dropHard': 'ўъ → oʻ: мўъжиза → moʻjiza',
-  'opt.tsFinal': 'Soʻz oxiridagi -ts → ц: abzats → абзац',
-  'text.input': 'Kiritish',
-  'text.output': 'Natija',
-  'text.placeholder': 'Matnni shu yerga yozing yoki qoʻying — natija darhol chiqadi. Masalan: O\'zbekiston Respublikasi, Toshkent shahri.',
-  'text.resultPlaceholder': 'Natija',
-  'text.detected': 'aniqlandi: {script}',
-  'text.paste': 'Qoʻyish',
-  'text.clear': 'Tozalash',
-  'text.copy': 'Nusxalash',
-  'text.copied': 'Nusxalandi',
-  'text.pasteHint': 'Ctrl+V bilan qoʻying',
-  'text.export': 'Yuklab olish',
-  'text.exportAs': 'Natijani fayl sifatida yuklab olish',
-  'text.stats': '{chars} belgi · {words} soʻz',
-  'text.direction': '{from} → {to}',
-  'files.drop': 'Fayllarni shu yerga tashlang',
-  'files.or': 'yoki',
-  'files.choose': 'Fayllarni tanlash',
-  'files.formats': 'Word, Excel, PowerPoint (docx, xlsx, pptx), LibreOffice (odt, ods, odp), RTF, EPUB, FB2, HTML, XML, SVG, Markdown, JSON, CSV, TXT, subtitrlar (srt, vtt, ass).',
-  'files.privacy': 'Fayllar qurilmangizdan chiqmaydi: hammasi brauzeringizda, WebAssembly yordamida bajariladi. Shriftlar, rasmlar, jadvallar va formatlash oʻzgarmaydi.',
-  'files.limit': 'Bitta fayl {size} MB gacha.',
-  'files.summary': '{done} / {total} tayyor',
-  'files.downloadAll': 'Hammasini ZIP qilib yuklab olish',
-  'files.clear': 'Roʻyxatni tozalash',
-  'files.reconvert': 'Yangi sozlamalar bilan qayta oʻgirish',
-  'files.download': 'Yuklab olish',
-  'files.cancel': 'Bekor qilish',
-  'files.remove': 'Olib tashlash',
-  'files.retry': 'Qayta urinish',
-  'files.list': 'Fayllar roʻyxati',
-  'files.from': '{from} → {to}',
-  'files.changed': '{changed} ta matn boʻlagi oʻzgardi',
-  'status.queued': 'Navbatda',
-  'status.running': 'Oʻgirilmoqda…',
-  'status.done': 'Tayyor',
-  'status.error': 'Xato',
-  'status.cancelled': 'Bekor qilindi',
-  'engine.wasm': 'WebAssembly · {n} oqim',
-  'engine.js': 'JavaScript (zaxira) · {n} oqim',
-  'engine.loading': 'Dvigatel yuklanmoqda…',
-  'engine.title': 'Konvertatsiya brauzerda, kompyuteringiz protsessori yadrolarida bajariladi',
-  'warn.sameScript': 'Fayl allaqachon shu alifboda — oʻzgarishsiz qoldi.',
-  'warn.noText': 'Faylda oʻgiriladigan matn topilmadi.',
-  'warn.embeddedSkipped': 'Ichki joylashtirilgan obyektlardan biri oʻtkazib yuborildi.',
-  'err.corrupt': 'Fayl buzilgan yoki toʻliq emas.',
-  'err.encrypted': 'Fayl parol bilan himoyalangan yoki shifrlangan.',
-  'err.legacyOffice': 'Bu eski .doc/.xls/.ppt formati (yoki parolli Office fayli). Uni avval .docx/.xlsx/.pptx qilib saqlang.',
-  'err.pdf': 'PDF qoʻllab-quvvatlanmaydi: undagi matn sahifadagi joylashuvga qotirilgan. Asl hujjatni (Word, ODT…) oʻgiring.',
-  'err.binary': 'Bu fayl matnli hujjat emas.',
-  'err.unknownPackage': 'ZIP arxiv tanilmadi (Office, OpenDocument yoki EPUB emas).',
-  'err.tooLarge': 'Fayl juda katta.',
-  'err.tooManyEntries': 'Arxivda fayllar juda koʻp.',
-  'err.zipBomb': 'Arxiv shubhali darajada katta hajmga ochiladi.',
-  'err.multidisk': 'Koʻp qismli arxivlar qoʻllab-quvvatlanmaydi.',
-  'err.zipMethod': 'Arxivdagi siqish usuli qoʻllab-quvvatlanmaydi.',
-  'err.cancelled': 'Bekor qilindi.',
-  'err.internal': 'Kutilmagan xato: {detail}',
-  'info.law': '2026-yil 21-oktabr, OʻRQ-1184: alifbo 28 harf + tutuq belgisi (ʼ). Oʻzgargan harflar:',
-  'info.example': 'Misol',
-  'info.notes': '«ng» endi alohida harf emas, «Isʼhoq» → «Ishoq». Kirill ↔ lotin qoidalari: е/э, ц, ъ, ь va lugʻat (obyekt → объект).',
-  'dl.title': 'Yuklab olish',
-  'dl.office': 'Microsoft Office makrosi (Word, Excel, PowerPoint 97–2026)',
-  'dl.officeHint': 'UzTranslit.bas — VBA modulini import qiling, soʻng UzSelfTest makrosini bir marta ishga tushiring.',
-  'dl.lo': 'LibreOffice kengaytmasi (Basic)',
-  'dl.loHint': 'Asboblar ▸ Kengaytmalar boshqaruvchisi ▸ Qoʻshish. Menyu: Asboblar ▸ UzTranslit.',
-  'dl.loPython': 'LibreOffice kengaytmasi (Python)',
-  'dl.loPythonHint': 'libreoffice-script-provider-python paketi kerak.',
-  'dl.soon': 'Android, iOS va kompyuter (Windows, macOS, Linux) ilovalari — tez orada.',
-  'dl.releases': 'Barcha versiyalar — GitHub Releases',
-  'footer.source': 'manba kodi',
-  'footer.privacy': 'Matn va fayllar hech qayerga yuborilmaydi.'
-};
+export interface LangInfo {
+  id: Lang;
+  /** the language's name in itself, shown in the switcher */
+  name: string;
+  /** value of <html lang> */
+  htmlLang: string;
+  /** locale for numbers */
+  locale: string;
+}
 
-export type MessageKey = keyof typeof uz;
+export const LANGS: readonly LangInfo[] = [
+  { id: 'uz', name: 'Oʻzbekcha (1995)', htmlLang: 'uz-Latn', locale: 'uz-Latn-UZ' },
+  { id: 'uz-new', name: 'Özbekça (2026)', htmlLang: 'uz-Latn', locale: 'uz-Latn-UZ' },
+  { id: 'ru', name: 'Русский', htmlLang: 'ru', locale: 'ru-RU' },
+  { id: 'en', name: 'English', htmlLang: 'en', locale: 'en-US' }
+];
 
-const en: Record<MessageKey, string> = {
-  'app.subtitle': 'Uzbek script converter — follows law OʻRQ-1184 (Ö Ğ Ş Ç)',
-  'app.theme': 'Toggle theme',
-  'app.lang': 'Oʻzbekcha',
-  'app.langLabel': 'Interface language',
-  'tab.label': 'Section',
-  'tab.text': 'Text',
-  'tab.files': 'Files',
-  'dir.label': 'Direction',
-  'dir.from': 'From',
-  'dir.to': 'To',
-  'dir.swap': 'Swap',
-  'script.auto': 'Auto',
-  'script.cyr': 'Cyrillic',
-  'script.lat': 'Latin 1995',
-  'script.new': 'Latin 2026',
-  'name.cyr': 'Cyrillic',
-  'name.lat': 'Latin 1995',
-  'name.new': 'Latin 2026',
-  'opt.ascii': 'plain apostrophe ( \' )',
-  'opt.urls': 'leave URLs and e-mails',
-  'opt.more': 'More rules',
-  'opt.dictionary': 'Loanword dictionary: obyekt → объект, sirk → цирк',
-  'opt.dropHard': 'ўъ → oʻ: мўъжиза → moʻjiza',
-  'opt.tsFinal': 'Word-final -ts → ц: abzats → абзац',
-  'text.input': 'Input',
-  'text.output': 'Result',
-  'text.placeholder': 'Type or paste text here — the result appears instantly. E.g.: O\'zbekiston Respublikasi, Toshkent shahri.',
-  'text.resultPlaceholder': 'Result',
-  'text.detected': 'detected: {script}',
-  'text.paste': 'Paste',
-  'text.clear': 'Clear',
-  'text.copy': 'Copy',
-  'text.copied': 'Copied',
-  'text.pasteHint': 'Paste with Ctrl+V',
-  'text.export': 'Download',
-  'text.exportAs': 'Download the result as a file',
-  'text.stats': '{chars} characters · {words} words',
-  'text.direction': '{from} → {to}',
-  'files.drop': 'Drop files here',
-  'files.or': 'or',
-  'files.choose': 'Choose files',
-  'files.formats': 'Word, Excel, PowerPoint (docx, xlsx, pptx), LibreOffice (odt, ods, odp), RTF, EPUB, FB2, HTML, XML, SVG, Markdown, JSON, CSV, TXT, subtitles (srt, vtt, ass).',
-  'files.privacy': 'Files never leave your device: everything runs in your browser with WebAssembly. Fonts, pictures, tables and formatting stay as they are.',
-  'files.limit': 'Up to {size} MB per file.',
-  'files.summary': '{done} / {total} done',
-  'files.downloadAll': 'Download all as ZIP',
-  'files.clear': 'Clear list',
-  'files.reconvert': 'Convert again with the new settings',
-  'files.download': 'Download',
-  'files.cancel': 'Cancel',
-  'files.remove': 'Remove',
-  'files.retry': 'Try again',
-  'files.list': 'Files',
-  'files.from': '{from} → {to}',
-  'files.changed': '{changed} text runs changed',
-  'status.queued': 'Queued',
-  'status.running': 'Converting…',
-  'status.done': 'Done',
-  'status.error': 'Error',
-  'status.cancelled': 'Cancelled',
-  'engine.wasm': 'WebAssembly · {n} threads',
-  'engine.js': 'JavaScript fallback · {n} threads',
-  'engine.loading': 'Loading engine…',
-  'engine.title': 'Conversion runs in your browser, on your processor\'s cores',
-  'warn.sameScript': 'The file is already in the target script — left unchanged.',
-  'warn.noText': 'No convertible text found in the file.',
-  'warn.embeddedSkipped': 'An embedded object was skipped.',
-  'err.corrupt': 'The file is damaged or incomplete.',
-  'err.encrypted': 'The file is password-protected or encrypted.',
-  'err.legacyOffice': 'This is a legacy .doc/.xls/.ppt file (or a password-protected Office file). Save it as .docx/.xlsx/.pptx first.',
-  'err.pdf': 'PDF is not supported: its text is fixed to positions on the page. Convert the original document (Word, ODT…) instead.',
-  'err.binary': 'This file is not a text document.',
-  'err.unknownPackage': 'Unrecognised ZIP package (not Office, OpenDocument or EPUB).',
-  'err.tooLarge': 'The file is too large.',
-  'err.tooManyEntries': 'Too many entries in the archive.',
-  'err.zipBomb': 'The archive expands to a suspicious size.',
-  'err.multidisk': 'Multi-part archives are not supported.',
-  'err.zipMethod': 'Unsupported compression method in the archive.',
-  'err.cancelled': 'Cancelled.',
-  'err.internal': 'Unexpected error: {detail}',
-  'info.law': '21 October 2026, law OʻRQ-1184: 28 letters + the tutuq sign (ʼ). Changed letters:',
-  'info.example': 'Example',
-  'info.notes': '“ng” is no longer a separate letter; “Isʼhoq” → “Ishoq”. Cyrillic ↔ Latin rules: е/э, ц, ъ, ь and a loanword dictionary (obyekt → объект).',
-  'dl.title': 'Downloads',
-  'dl.office': 'Microsoft Office macro (Word, Excel, PowerPoint 97–2026)',
-  'dl.officeHint': 'UzTranslit.bas — import the VBA module, then run the UzSelfTest macro once.',
-  'dl.lo': 'LibreOffice extension (Basic)',
-  'dl.loHint': 'Tools ▸ Extension Manager ▸ Add. Menu: Tools ▸ UzTranslit.',
-  'dl.loPython': 'LibreOffice extension (Python)',
-  'dl.loPythonHint': 'Needs the libreoffice-script-provider-python package.',
-  'dl.soon': 'Android, iOS and desktop (Windows, macOS, Linux) apps — coming soon.',
-  'dl.releases': 'All versions — GitHub Releases',
-  'footer.source': 'source code',
-  'footer.privacy': 'Text and files are never uploaded.'
-};
+/** Every table has every key (TypeScript checks it); a new string goes into all four. */
+export const MESSAGES: Record<Lang, Record<MessageKey, string>> = { uz, 'uz-new': uzNew, ru, en };
 
-const MESSAGES: Record<Lang, Record<MessageKey, string>> = { uz, en };
+export function isLang(v: unknown): v is Lang {
+  return LANGS.some(l => l.id === v);
+}
 
-/** Uzbek (Latin) interface with an English fallback. */
+/** Interface language: Uzbek in Latin 1995 (default) or Latin 2026, Russian, English. */
 @Injectable({ providedIn: 'root' })
 export class I18nService {
   readonly lang = signal<Lang>('uz');
+  readonly info = computed(() => LANGS.find(l => l.id === this.lang()) ?? LANGS[0]);
 
   t(key: MessageKey | string, params?: Record<string, string | number>): string {
-    const table = MESSAGES[this.lang()];
-    let s = (table as Record<string, string>)[key] ?? (en as Record<string, string>)[key] ?? key;
+    const table = MESSAGES[this.lang()] as Record<string, string>;
+    let s = table[key] ?? (en as Record<string, string>)[key] ?? key;
     if (params) for (const k in params) s = s.replace('{' + k + '}', String(params[k]));
     return s;
+  }
+
+  /** A number formatted for the interface language (1 234,5 / 1,234.5). */
+  num(n: number, fractionDigits = 0): string {
+    return n.toLocaleString(this.info().locale, { maximumFractionDigits: fractionDigits });
   }
 }

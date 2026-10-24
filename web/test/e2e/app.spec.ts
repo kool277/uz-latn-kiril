@@ -97,19 +97,50 @@ test.describe('without WebAssembly', () => {
   });
 });
 
-test('fits a phone screen without horizontal scrolling', async ({ page }) => {
-  await page.setViewportSize({ width: 375, height: 812 });
-  await page.goto('/');
-  await page.getByRole('tab', { name: 'Fayllar' }).click();
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-  expect(overflow).toBeLessThanOrEqual(0);
-});
+for (const [lang, files] of [['uz', 'Fayllar'], ['ru', 'Файлы']]) {
+  test(`fits a phone screen without horizontal scrolling (${lang})`, async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/?lang=' + lang);
+    await page.getByRole('tab', { name: files }).click();
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+}
 
-test('English interface', async ({ page }) => {
+test('interface languages: the choice is applied and remembered', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Interfeys tili' }).click();
+  const lang = page.getByTestId('lang');
+  await lang.selectOption('en');
   await expect(page.getByRole('tab', { name: 'Files' })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await lang.selectOption('ru');
+  await expect(page.getByRole('tab', { name: 'Файлы' })).toBeVisible();
+  await expect(page).toHaveTitle(/конвертер узбекского алфавита/);
+  await lang.selectOption('uz-new');
+  await expect(page.getByRole('button', { name: 'Qöyiş' })).toBeVisible();
+  await expect(page.getByText('Özbek alifbo konvertori')).toBeVisible();
+  await page.reload();
+  await expect(page.getByTestId('lang')).toHaveValue('uz-new');
+});
+
+test('?lang=uz-new in the address', async ({ page }) => {
+  await page.goto('/?lang=uz-new&text=' + encodeURIComponent('Shahar'));
+  await expect(page.getByRole('button', { name: 'Tozalaş' })).toBeVisible();
+  await expect(page.getByTestId('result')).toHaveValue('Şahar');
+});
+
+test.describe('a browser set to Russian', () => {
+  test.use({ locale: 'ru-RU' });
+
+  test('opens in Russian and still converts', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
+    await expect(page.getByRole('tab', { name: 'Файлы' })).toBeVisible();
+    await page.getByTestId('source').fill('Тошкент шаҳри');
+    await expect(page.getByTestId('result')).toHaveValue('Toşkent şahri');
+    await expect(page.getByTestId('detected')).toContainText('кириллица');
+    await expect(page.getByText('символов: 13 · слов: 2 · кириллица → новая латиница')).toBeVisible();
+  });
 });
 
 test('works offline after the first visit', async ({ page, context }) => {
