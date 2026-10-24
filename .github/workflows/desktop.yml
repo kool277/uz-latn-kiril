@@ -1,0 +1,144 @@
+name: Desktop (Qt)
+
+# Builds and tests platforms/qt-desktop on Linux, Windows and macOS with Qt 6.8 LTS, then packages it:
+# an AppImage, an Inno Setup installer and a dmg, uploaded as workflow artifacts.
+on:
+  push:
+    branches: [main]
+    paths:
+      - platforms/qt-desktop/**
+      - spec/**
+      - core/js/**
+      - tools/make_differential.mjs
+      - tools/random-text.mjs
+      - .github/workflows/desktop.yml
+  pull_request:
+    paths:
+      - platforms/qt-desktop/**
+      - spec/**
+      - core/js/**
+      - tools/make_differential.mjs
+      - tools/random-text.mjs
+      - .github/workflows/desktop.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  desktop:
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux (AppImage)
+            os: ubuntu-24.04
+            shell: bash
+            cmake-args: ''
+          - name: Windows (installer)
+            os: windows-latest
+            shell: pwsh # MSVC's link.exe, not Git Bash's /usr/bin/link
+            cmake-args: ''
+          - name: macOS (dmg)
+            os: macos-15
+            shell: bash
+            cmake-args: '"-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    env:
+      BUILD: platforms/qt-desktop/build
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Differential corpus from the reference core (build/differential.json)
+        run: node tools/make_differential.mjs
+
+      - name: Install Qt 6.8 LTS
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.*'
+          cache: true
+
+      - name: System packages (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          # OpenGL headers for Qt6::Gui; the X11 platform plugin's libraries get bundled into the AppImage
+          sudo apt-get install -y ninja-build libgl1-mesa-dev libegl1 libfontconfig1 libxkbcommon-x11-0 \
+            libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
+            libxcb-shape0 libxcb-xinerama0 libxcb-xkb1
+
+      - name: Ninja (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: command -v ninja || brew install ninja
+
+      - name: MSVC developer environment (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Configure
+        run: cmake -S platforms/qt-desktop -B platforms/qt-desktop/build -G Ninja -DCMAKE_BUILD_TYPE=Release ${{ matrix.cmake-args }}
+
+      - name: Build
+        run: cmake --build platforms/qt-desktop/build --parallel
+
+      - name: Test (fixtures, differential, documents, CLI, GUI, translations, GUI smoke)
+        run: ctest --test-dir platforms/qt-desktop/build --output-on-failure
+
+      - name: AppImage
+        if: runner.os == 'Linux'
+        shell: bash
+        run: platforms/qt-desktop/packaging/linux/build-appimage.sh "$BUILD"
+
+      - name: Installer
+        if: runner.os == 'Windows'
+        run: |
+          ./platforms/qt-desktop/packaging/windows/deploy.ps1 -Build $env:BUILD
+          $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup --no-progress -y
+            if ($LASTEXITCODE -ne 0) { throw 'Inno Setup could not be installed' }
+          }
+          $version = (Select-String -Path "$env:BUILD/CMakeCache.txt" -Pattern '^CMAKE_PROJECT_VERSION:STATIC=(.*)$').Matches[0].Groups[1].Value
+          $build = (Resolve-Path $env:BUILD).Path
+          & $iscc "/DAppVersion=$version" "/DDeployDir=$build\deploy" "/DOutputDir=$build" `
+            platforms/qt-desktop/packaging/installer/uztranslit.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed with exit code $LASTEXITCODE" }
+
+      - name: Disk image
+        if: runner.os == 'macOS'
+        shell: bash
+        run: platforms/qt-desktop/packaging/macos/build-dmg.sh "$BUILD"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: uztranslit-${{ runner.os }}
+          path: |
+            platforms/qt-desktop/build/UzTranslit-*.AppImage
+            platforms/qt-desktop/build/UzTranslit-*-setup.exe
+            platforms/qt-desktop/build/UzTranslit-*.dmg
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: test-log-${{ runner.os }}
+          path: platforms/qt-desktop/build/Testing/Temporary/
+          retention-days: 7

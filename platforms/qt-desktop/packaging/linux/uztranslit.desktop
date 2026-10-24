@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=UzTranslit
+GenericName=Uzbek script converter
+GenericName[uz]=Oʻzbek alifbo konvertori
+GenericName[ru]=Конвертер узбекского алфавита
+Comment=Convert Uzbek text between Cyrillic, Latin 1995 and Latin 2026
+Comment[uz]=Oʻzbek matnini kirill, lotin 1995 va yangi lotin alifbolari orasida oʻgirish
+Comment[ru]=Конвертация узбекского текста между кириллицей, латиницей 1995 и новой латиницей
+Exec=uztranslit %F
+Icon=uztranslit
+Terminal=false
+Categories=Utility;TextTools;
+MimeType=text/plain;text/markdown;text/csv;application/x-subrip;text/html;application/json;application/xml;
+Keywords=Uzbek;Cyrillic;Latin;transliteration;converter;oʻzbek;kirill;lotin;
+StartupWMClass=uztranslit

@@ -35,6 +35,17 @@ if command -v soffice >/dev/null 2>&1 && python3 -c "import uno" 2>/dev/null; th
 else
   echo "== LibreOffice not available: Basic suite skipped"
 fi
+if command -v qmake6 >/dev/null 2>&1 || docker image inspect uztranslit-qt >/dev/null 2>&1; then
+  echo "== Qt desktop (platforms/qt-desktop: fixtures, differential, CLI, GUI offscreen)"
+  if command -v qmake6 >/dev/null 2>&1; then
+    ( cd "$ROOT/platforms/qt-desktop" && cmake -S . -B "$ROOT/build/qt" -G Ninja >/dev/null && cmake --build "$ROOT/build/qt" >/dev/null && ctest --test-dir "$ROOT/build/qt" ) > "$ROOT/build/qt-test.log" 2>&1
+  else
+    docker run --rm --user "$(id -u):$(id -g)" -v "$ROOT":/repo -w /repo/platforms/qt-desktop uztranslit-qt \
+      sh -c 'cmake -S . -B /repo/build/qt -G Ninja >/dev/null && cmake --build /repo/build/qt >/dev/null && ctest --test-dir /repo/build/qt' > "$ROOT/build/qt-test.log" 2>&1
+  fi && grep "tests passed" "$ROOT/build/qt-test.log" || { tail -30 "$ROOT/build/qt-test.log"; fail=1; }
+else
+  echo "== Qt 6 not available (no qmake6, no uztranslit-qt image): desktop skipped"
+fi
 if [ -n "${JAVA_HOME:-}" ] && { [ -n "${ANDROID_HOME:-}" ] || [ -f "$ROOT/platforms/android/local.properties" ]; }; then
   echo "== Kotlin core + Android app (platforms/android: fixtures, differential, unit tests)"
   ( cd "$ROOT/platforms/android" && ./gradlew --no-daemon -q test ) > "$ROOT/build/android-test.log" 2>&1 && echo "gradle test: ok" || { tail -30 "$ROOT/build/android-test.log"; fail=1; }
