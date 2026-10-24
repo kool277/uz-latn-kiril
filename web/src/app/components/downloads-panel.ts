@@ -17,7 +17,7 @@ export const REPO_URL = 'https://github.com/kool277/uz-latn-kiril';
           </li>
         }
       </ul>
-      <p class="muted">{{ i18n.t('dl.soon') }} <a [href]="repo + '/releases'" rel="noopener" target="_blank">{{ i18n.t('dl.releases') }}</a></p>
+      <p class="muted">{{ i18n.t('dl.soon') }} <a [href]="repo + '/releases/latest'" rel="noopener" target="_blank">{{ i18n.t('dl.releases') }}</a></p>
     </section>
   `,
   styles: `

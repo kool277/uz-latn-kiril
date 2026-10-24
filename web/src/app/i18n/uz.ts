@@ -100,8 +100,8 @@ export const uz = {
   'dl.loHint': 'Asboblar ▸ Kengaytmalar boshqaruvchisi ▸ Qoʻshish. Menyu: Asboblar ▸ UzTranslit.',
   'dl.loPython': 'LibreOffice kengaytmasi (Python)',
   'dl.loPythonHint': 'libreoffice-script-provider-python paketi kerak.',
-  'dl.soon': 'Android, iOS va kompyuter (Windows, macOS, Linux) ilovalari — tez orada.',
-  'dl.releases': 'Barcha versiyalar — GitHub Releases',
+  'dl.soon': 'Android (APK), Windows, macOS va Linux ilovalari hamda Office lentasi toʻplami:',
+  'dl.releases': 'GitHub Releases — oxirgi versiya',
   'footer.source': 'manba kodi',
   'footer.privacy': 'Matn va fayllar hech qayerga yuborilmaydi.'
 };

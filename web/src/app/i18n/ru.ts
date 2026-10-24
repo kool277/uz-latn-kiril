@@ -102,8 +102,8 @@ export const ru: Record<MessageKey, string> = {
   'dl.loHint': 'Сервис ▸ Управление расширениями ▸ Добавить. Меню: Сервис ▸ UzTranslit.',
   'dl.loPython': 'Расширение LibreOffice (Python)',
   'dl.loPythonHint': 'Требуется пакет libreoffice-script-provider-python.',
-  'dl.soon': 'Приложения для Android, iOS и компьютера (Windows, macOS, Linux) — скоро.',
-  'dl.releases': 'Все версии — GitHub Releases',
+  'dl.soon': 'Приложения для Android (APK), Windows, macOS и Linux, а также набор для ленты Office:',
+  'dl.releases': 'GitHub Releases — последняя версия',
   'footer.source': 'исходный код',
   'footer.privacy': 'Текст и файлы никуда не отправляются.'
 };

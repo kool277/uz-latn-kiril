@@ -105,8 +105,8 @@ export const uzNew: Record<MessageKey, string> = {
   'dl.loHint': 'Asboblar ▸ Kengaytmalar boşqaruvçisi ▸ Qöşiş. Menyu: Asboblar ▸ UzTranslit.',
   'dl.loPython': 'LibreOffice kengaytmasi (Python)',
   'dl.loPythonHint': 'libreoffice-script-provider-python paketi kerak.',
-  'dl.soon': 'Android, iOS va kompyuter (Windows, macOS, Linux) ilovalari — tez orada.',
-  'dl.releases': 'Barça versiyalar — GitHub Releases',
+  'dl.soon': 'Android (APK), Windows, macOS va Linux ilovalari hamda Office lentasi töplami:',
+  'dl.releases': 'GitHub Releases — oxirgi versiya',
   'footer.source': 'manba kodi',
   'footer.privacy': 'Matn va fayllar heç qayerga yuborilmaydi.'
 };

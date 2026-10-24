@@ -1,0 +1,61 @@
+name: Release
+
+# On a tag v*: every suite (ci.yml), the Android APK (android.yml) and the desktop packages (desktop.yml) are built
+# in this run, and only when all of them pass is a GitHub release published with every file a user installs.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  conformance:
+    uses: ./.github/workflows/ci.yml
+  android:
+    uses: ./.github/workflows/android.yml
+  desktop:
+    uses: ./.github/workflows/desktop.yml
+
+  publish:
+    name: Publish the release
+    needs: [conformance, android, desktop]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: The committed LibreOffice extensions are built from the current sources
+        run: |
+          python3 tools/make_lo_basic.py
+          python3 tools/build_oxt.py
+          git diff --exit-code -- libreoffice/
+      - name: Office and LibreOffice files
+        run: |
+          mkdir -p dist kit/ribbon
+          cp office-vba/UzTranslit.bas office-vba/UzTranslitRibbon.bas libreoffice/UzTranslitLO.bas libreoffice/*.oxt dist/
+          cp platforms/office-addin/manifest.xml dist/uztranslit-office-addin.xml
+          cp -r office-vba/ribbon/. kit/ribbon/
+          cp office-vba/UzTranslit.bas office-vba/UzTranslitRibbon.bas tools/add_ribbon.py docs/OFFICE_INSTALL.md kit/
+          sed -i 's|os.path.join(ROOT, "office-vba", "ribbon")|os.path.join(os.path.dirname(os.path.abspath(__file__)), "ribbon")|' kit/add_ribbon.py
+          (cd kit && zip -qr ../dist/UzTranslit-ribbon-kit.zip .)
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: uztranslit-*
+          path: artifacts
+          merge-multiple: true
+      - name: Apps
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          find artifacts -type f | sort
+          cp artifacts/app-debug.apk "dist/UzTranslit-$version-android.apk"
+          find artifacts -name 'UzTranslit-*' \( -name '*.AppImage' -o -name '*-setup.exe' -o -name '*.dmg' \) -exec cp {} dist/ \;
+          ls -l dist
+          test "$(ls dist | wc -l)" -ge 11
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 tools/release_notes.py "$GITHUB_REF_NAME" dist > notes.md
+          gh release create "$GITHUB_REF_NAME" dist/* --title "UzTranslit $GITHUB_REF_NAME" --notes-file notes.md --verify-tag

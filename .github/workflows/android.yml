@@ -20,6 +20,7 @@ on:
       - tools/random-text.mjs
       - .github/workflows/android.yml
   workflow_dispatch:
+  workflow_call:      # release.yml builds the release files with it
 
 permissions:
   contents: read

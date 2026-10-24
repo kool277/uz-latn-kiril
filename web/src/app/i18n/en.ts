@@ -102,8 +102,8 @@ export const en: Record<MessageKey, string> = {
   'dl.loHint': 'Tools ▸ Extension Manager ▸ Add. Menu: Tools ▸ UzTranslit.',
   'dl.loPython': 'LibreOffice extension (Python)',
   'dl.loPythonHint': 'Needs the libreoffice-script-provider-python package.',
-  'dl.soon': 'Android, iOS and desktop (Windows, macOS, Linux) apps — coming soon.',
-  'dl.releases': 'All versions — GitHub Releases',
+  'dl.soon': 'Android (APK), Windows, macOS and Linux apps and the Office ribbon kit:',
+  'dl.releases': 'GitHub Releases — latest version',
   'footer.source': 'source code',
   'footer.privacy': 'Text and files are never uploaded.'
 };
