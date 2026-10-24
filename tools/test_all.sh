@@ -7,6 +7,11 @@ mkdir -p "$ROOT/build"
 echo "== Source hygiene (no invisible characters in code)"
 ( cd "$ROOT" && python3 tools/escape-invisible.py --check $(git ls-files '*.ts' '*.mjs' '*.js' '*.py' '*.bas' '*.html' '*.css' '*.yml' \
     '*.kt' '*.kts' '*.swift' '*.cpp' '*.hpp' '*.h' '*.xml' '*.xcu' | grep -v '^web/test/fixtures/') ) && echo "clean" || fail=1
+echo "== Generated files are current (LibreOffice module and extensions, add-in manifests)"
+if git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  python3 "$ROOT/tools/make_lo_basic.py" >/dev/null && python3 "$ROOT/tools/build_oxt.py" >/dev/null
+  git -C "$ROOT" diff --quiet -- libreoffice/ && echo "current" || { echo "FAIL: rebuilt files differ from the committed ones (commit them):"; git -C "$ROOT" diff --stat -- libreoffice/; fail=1; }
+fi
 echo "== VBA lint (what the VBA editor would reject)"; python3 "$ROOT/tools/vba_lint.py" "$ROOT"/office-vba/*.bas || fail=1
 echo "== Office ribbon (tools/add_ribbon.py)"
 python3 "$ROOT/tools/test_add_ribbon.py" > "$ROOT/build/ribbon-test.log" 2>&1 || fail=1
