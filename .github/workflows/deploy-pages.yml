@@ -43,9 +43,12 @@ jobs:
       - name: Build
         working-directory: web
         env:
-          # "" on latin.jaybi.uz, "/<repo>" while the site lives on <user>.github.io
-          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          # "/<repo>" while the site lives on <user>.github.io; configure-pages can still report it for a while
+          # after the custom domain is switched on, so a domain in public/CNAME always means the root path
+          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
         run: |
+          if [ -s public/CNAME ]; then BASE_PATH=""; else BASE_PATH="$PAGES_BASE_PATH"; fi
+          echo "base href: $BASE_PATH/"
           npm ci --no-audit --no-fund
           npm run build -- --base-href "$BASE_PATH/"
       - uses: actions/upload-pages-artifact@v5

@@ -1,8 +1,9 @@
 # latin.jaybi.uz on GitHub Pages
 
 The site is built and published by `.github/workflows/deploy-pages.yml` after CI passes on `main`.
-Until the custom domain is set up it is served from `https://kool277.github.io/uz-latn-kiril/`; the build
-asks GitHub Pages for its base path, so the same workflow works for both addresses.
+It is served from `https://latin.jaybi.uz/` (before the custom domain: `https://kool277.github.io/uz-latn-kiril/`).
+The build targets the root path `/` whenever `web/public/CNAME` names a domain, and otherwise the base path GitHub
+Pages reports (`/uz-latn-kiril/`). Delete `web/public/CNAME` to publish on the github.io address only.
 
 ## 1. DNS (at the registrar of jaybi.uz)
 
