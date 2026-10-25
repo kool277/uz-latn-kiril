@@ -13,7 +13,7 @@ All six directions, with the rules that matter: е/э, ц → s/ts, ъ/ь, йў 
 | JavaScript core (browser/Node, UMD) | `core/js/uztranslit.js` | 216/216 ✔ |
 | Python core + CLI | `core/python/uztranslit.py` | 216/216 ✔ |
 | WebAssembly core (AssemblyScript) + the same engine as plain JS (wasm2js) | `core/wasm/` | 216/216 ✔ both builds; identical to the JS core on 40,000 random conversions per build in CI (1.2M checked once) |
-| Web app for **https://latin.jaybi.uz** — Angular 22, WebAssembly on every CPU core, text **and documents**, PWA/offline | `web/` | 216/216 ✔ both engines · 507 engine tests · 16 Playwright tests |
+| Web app for **https://latin.jaybi.uz** — Angular 22, WebAssembly on every CPU core, text **and documents**, PWA/offline | `web/` | 216/216 ✔ both engines · 507 engine tests · 19 Playwright tests |
 | MS Office macro module (Word/Excel/PowerPoint 97 → 2026, VBA 5–7) | `office-vba/UzTranslit.bas` | engine executed in LibreOffice Basic VBA mode: 214/214 ✔, 3,500 differential ✔; document macros compiled + linted (Office itself not in CI) |
 | Desktop (Qt 6): Windows installer, macOS dmg, Linux AppImage — editor with live conversion, text/Markdown/SRT/HTML/XML files, folder batch, tray clipboard actions, `uztranslit` CLI | `platforms/qt-desktop/` | C++ core 216/216 ✔, 22,000 differential ✔, 7 ctest suites (CLI, GUI offscreen, documents, translations); packages built in CI, unsigned |
 | Office ribbon tab (2007+): `UzTranslitRibbon.bas` + `office-vba/ribbon/`, put into a .dotm/.xlam/.ppam by `tools/add_ribbon.py` | `office-vba/ribbon/` | injection tested on Word/Excel/PowerPoint files; `UzSelfTest` 29/29 in CI |

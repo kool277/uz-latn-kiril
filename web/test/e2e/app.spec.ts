@@ -129,6 +129,24 @@ test('?lang=uz-new in the address', async ({ page }) => {
   await expect(page.getByTestId('result')).toHaveValue('Şahar');
 });
 
+for (const [path, lang, tab, title] of [['/', 'uz-Latn', 'Fayllar', 'Kirill-lotin'], ['/ru/', 'ru', 'Файлы', 'Кириллица ↔ латиница'], ['/en/', 'en', 'Files', 'Cyrillic ↔ Latin']]) {
+  test(`search page ${path}: its own language, metadata and static text`, async ({ page, request }) => {
+    const html = await (await request.get(path)).text();
+    expect(html).toContain(`<link rel="canonical" href="https://latin.jaybi.uz${path}">`);
+    expect(html).toContain('<script type="application/ld+json">');
+    expect(html).toMatch(/<main class="seo-static">\s*<h1>/);
+    const problems = watch(page);
+    await page.goto(path);
+    await expect(page.locator('html')).toHaveAttribute('lang', lang);
+    await expect(page.getByRole('tab', { name: tab })).toBeVisible();
+    await expect(page.locator('.seo-static')).toHaveCount(0);
+    await expect(page).toHaveTitle(new RegExp('^' + title));
+    await page.getByTestId('source').fill('Тошкент');
+    await expect(page.getByTestId('result')).toHaveValue('Toşkent');
+    expect(problems).toEqual([]);
+  });
+}
+
 test.describe('a browser set to Russian', () => {
   test.use({ locale: 'ru-RU' });
 

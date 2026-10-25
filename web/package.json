@@ -8,7 +8,7 @@
     "start": "ng serve",
     "prebuild": "npm run sync",
     "build": "ng build",
-    "postbuild": "node scripts/csp-hash.mjs",
+    "postbuild": "node scripts/seo.mjs && node scripts/csp-hash.mjs",
     "watch": "ng build --watch --configuration development",
     "pretest": "npm run sync",
     "test": "ng test --watch=false",

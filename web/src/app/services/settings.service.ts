@@ -18,10 +18,13 @@ interface Stored {
   lang: Lang;
 }
 
-/** ?lang=… in the address, then the remembered choice, then a Russian-first browser; otherwise Uzbek. */
+/** ?lang=… or the /ru/ and /en/ pages (scripts/seo.mjs), then the remembered choice, then a Russian-first
+ *  browser; otherwise Uzbek. */
 function initialLang(saved: unknown): Lang {
   const q = new URLSearchParams(location.search).get('lang');
   if (isLang(q)) return q;
+  const page = /\/(ru|en)\/(?:index\.html)?$/.exec(location.pathname)?.[1];
+  if (isLang(page)) return page;
   if (isLang(saved)) return saved;
   return /^ru\b/i.test(navigator.languages?.[0] ?? navigator.language ?? '') ? 'ru' : 'uz';
 }

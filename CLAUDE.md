@@ -71,6 +71,9 @@ profile — installing the test library there replaces the user's My Macros ▸ 
   converting the `uz` ones with the engine (lat → new, `{placeholders}` protected), then review: examples of the old
   spelling (Isʼhoq → Ishoq) must stay. Russian counts use «символов: N» so no plural forms are needed.
   Every user-facing error is an `err.*` key. `?lang=uz|uz-new|ru|en` picks the language; a Russian-first browser gets `ru`.
+- Search: `scripts/seo.mjs` (postbuild) writes `/`, `/ru/`, `/en/` with their own title/description (`doc.*` keys),
+  keywords, hreflang, Open Graph, JSON-LD and static text in `<app-root>`; the app takes `ru`/`en` from the path.
+  Keep `public/sitemap.xml` in step with its pages.
 
 ## Conventions
 - UI language: Uzbek (Latin), English fallback; the web app also has Uzbek Latin 2026 and Russian (asked for by the
