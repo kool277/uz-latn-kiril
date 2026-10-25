@@ -1,10 +1,10 @@
 ; Inno Setup 6 script of the Windows installer. CI runs it after packaging/windows/deploy.ps1:
-;   iscc /DAppVersion=1.0.0 /DDeployDir=<deploy folder> /DOutputDir=<folder> platforms\qt-desktop\packaging\installer\uztranslit.iss
+;   iscc /DAppVersion=1.1.0 /DDeployDir=<deploy folder> /DOutputDir=<folder> platforms\qt-desktop\packaging\installer\uztranslit.iss
 ; The installer installs per user by default (no administrator rights); "all users" can be chosen in the wizard.
 ; Its own interface is English or Russian (Inno Setup ships no Uzbek messages file).
 
 #ifndef AppVersion
-  #define AppVersion "1.0.0"
+  #define AppVersion "1.1.0"
 #endif
 #ifndef DeployDir
   #define DeployDir "..\..\build\deploy"

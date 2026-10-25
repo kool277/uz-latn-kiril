@@ -30,6 +30,8 @@ def main():
         "| `uztranslit-office-addin.xml` | Office on the web, Mac, iPad, Microsoft 365 | platforms/office-addin/README.md (sideload) |",
         "| `uztranslit-libreoffice.oxt` / `-python.oxt` | LibreOffice | *Tools ▸ Extension Manager ▸ Add* |",
         "| `UzTranslitLO.bas` | LibreOffice Calc formulas (`=UZCONVERT()`) | import into *My Macros ▸ Standard* |",
+        "| `UzTranslit-*-web.zip` | any static web server | the web app as on latin.jaybi.uz; unzip at the server's root |",
+        "| `SHA256SUMS.txt` | checking downloads | `sha256sum -c SHA256SUMS.txt --ignore-missing` (Windows: `certutil -hashfile <file> SHA256`) |",
         "",
         "Conformance: `spec/fixtures.json` has **%d checks** (%d cases, %d round trips, %d detections, %d optional), and a"
         % (total, len(fx["cases"]), len(fx["roundtrips"]), len(fx["detect"]), len(fx["optional"])),

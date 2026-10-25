@@ -24,6 +24,13 @@ All six directions, with the rules that matter: е/э, ц → s/ts, ъ/ь, йў 
 | iOS / iPadOS / macOS — Swift package `UzTranslitCore`, SwiftUI app with Share and Action extensions, macOS app with a Services menu item | `platforms/ios/` | Swift core 216/216 ✔, 20,000 differential ✔ (Linux, CI); apps built unsigned on macOS in CI — signing/TestFlight need your Apple team (`platforms/ios/README.md`) |
 | Claude Code master prompt (Android, iOS, Qt 6, Office.js add-in, CI, releases) | `CLAUDE_CODE_PROMPT.md` + `CLAUDE.md` | run it |
 
+## Downloads
+
+Every [release](https://github.com/kool277/uz-latn-kiril/releases/latest) is built by `.github/workflows/release.yml`
+from a `v*` tag after every suite passes: Windows installer, macOS dmg, Linux AppImage, Android APK, Office macros and
+ribbon kit, Office add-in manifest, LibreOffice extensions and the web app as a zip, with `SHA256SUMS.txt`
+(`sha256sum -c SHA256SUMS.txt --ignore-missing`).
+
 ## Quick start
 
 ```bash
