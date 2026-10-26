@@ -46,5 +46,11 @@
   },
   "overrides": {
     "vite": "8.3.4"
+  },
+  "allowScripts": {
+    "esbuild": false,
+    "msgpackr-extract": false,
+    "lmdb": false,
+    "@parcel/watcher": false
   }
 }

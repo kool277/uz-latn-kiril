@@ -88,6 +88,9 @@ target_compile_definitions(uztranslit PRIVATE UZT_VERSION="${PROJECT_VERSION}")
 # English is the source language of the strings; uz is Uzbek in Latin 1995, ru is Russian.
 # `cmake --build build --target update_translations` runs lupdate on the sources.
 set(UZT_TS_FILES translations/uztranslit_uz.ts translations/uztranslit_ru.ts)
+# packaging/macos/Info.plist.in lists CFBundleLocalizations itself: skip Qt's reading of the .ts languages,
+# which runs xmllint from the build directory on these relative paths and only warns
+set(QT_SKIP_STORE_LANGUAGES_FROM_TS_FILES ON)
 if(Qt6_VERSION VERSION_GREATER_EQUAL 6.7)
     qt_add_translations(uztranslit
         SOURCE_TARGETS uztranslit_gui uztranslit_files
@@ -186,6 +189,8 @@ if(UZT_BUILD_TESTS)
     uzt_add_app_resources(tst_gui)
     add_test(NAME tst_gui COMMAND tst_gui -o "${CMAKE_BINARY_DIR}/Testing/Temporary/tst_gui.txt,txt" -o -,txt)
     set_tests_properties(tst_gui PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    # QSKIP("message") leaves out the macro's variadic argument, which -Wpedantic flags before C++20
+    set_target_properties(tst_gui tst_differential PROPERTIES CXX_STANDARD 20)
 
     qt_add_executable(tst_translations tests/tst_translations.cpp)
     target_link_libraries(tst_translations PRIVATE Qt6::Core Qt6::Test uztranslit_warnings)
