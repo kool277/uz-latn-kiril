@@ -7,7 +7,7 @@
            xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
            xsi:type="TaskPaneApp">
   <Id>c7a6737a-9d10-4aeb-b415-530240e81870</Id>
-  <Version>1.1.0.0</Version>
+  <Version>1.2.0.0</Version>
   <ProviderName>UzTranslit</ProviderName>
   <DefaultLocale>uz-Latn-UZ</DefaultLocale>
   <DisplayName DefaultValue="UzTranslit">
