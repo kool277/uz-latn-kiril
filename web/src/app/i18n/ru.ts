@@ -104,6 +104,15 @@ export const ru: Record<MessageKey, string> = {
   'dl.loPythonHint': 'Требуется пакет libreoffice-script-provider-python.',
   'dl.soon': 'Приложения для Android (APK), Windows, macOS и Linux, а также набор для ленты Office:',
   'dl.releases': 'GitHub Releases — последняя версия',
+  'dl.appsTitle': 'Приложения',
+  'dl.appWindows': 'Приложение для Windows 10/11',
+  'dl.appMac': 'Приложение для macOS (12 и новее)',
+  'dl.appLinux': 'Приложение для Linux (AppImage, x86-64)',
+  'dl.appAndroid': 'Приложение для Android (7 и новее, APK)',
+  'dl.appOffice': 'Установщик для Word и Excel (Windows)',
+  'dl.appMeta': '{version} · {size} МБ',
+  'dl.unsigned': 'Файлы для Windows и macOS не подписаны. Если Windows предупреждает, выберите «Подробнее ▸ Выполнить в любом случае»; в macOS при первом запуске: правый щелчок ▸ Открыть.',
+  'dl.checksums': 'Контрольные суммы SHA-256 (SHA256SUMS.txt)',
   'footer.source': 'исходный код',
   'footer.privacy': 'Текст и файлы никуда не отправляются.'
 };

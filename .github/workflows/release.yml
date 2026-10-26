@@ -28,6 +28,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
+      actions: write      # starts deploy-pages.yml
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -83,3 +84,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" dist/* --title "UzTranslit $GITHUB_REF_NAME" --notes-file notes.md --verify-tag
+      - name: Redeploy latin.jaybi.uz (its download buttons now point at this release)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy-pages.yml --repo "$GITHUB_REPOSITORY" --ref main

@@ -104,6 +104,15 @@ export const en: Record<MessageKey, string> = {
   'dl.loPythonHint': 'Needs the libreoffice-script-provider-python package.',
   'dl.soon': 'Android (APK), Windows, macOS and Linux apps and the Office ribbon kit:',
   'dl.releases': 'GitHub Releases — latest version',
+  'dl.appsTitle': 'Apps',
+  'dl.appWindows': 'Windows 10/11 app',
+  'dl.appMac': 'macOS app (12 and later)',
+  'dl.appLinux': 'Linux app (AppImage, x86-64)',
+  'dl.appAndroid': 'Android app (7 and later, APK)',
+  'dl.appOffice': 'Installer for Word and Excel (Windows)',
+  'dl.appMeta': '{version} · {size} MB',
+  'dl.unsigned': 'The Windows and macOS files are not code-signed. If Windows warns you, choose “More info ▸ Run anyway”; on macOS, the first time: right-click ▸ Open.',
+  'dl.checksums': 'SHA-256 checksums (SHA256SUMS.txt)',
   'footer.source': 'source code',
   'footer.privacy': 'Text and files are never uploaded.'
 };

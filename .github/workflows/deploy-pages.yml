@@ -1,7 +1,8 @@
 name: Deploy latin.jaybi.uz
 
-# Publishes web/ to GitHub Pages after CI has passed on main (or by hand). The site ships the tested engine:
-# the build compiles core/wasm and copies it in (web/scripts/sync-core.mjs).
+# Publishes web/ to GitHub Pages after CI has passed on main (or by hand; release.yml runs it after publishing, so the
+# download buttons point at the new release). The site ships the tested engine: the build compiles core/wasm and
+# copies it in (web/scripts/sync-core.mjs).
 on:
   workflow_run:
     workflows: [CI]
@@ -40,9 +41,14 @@ jobs:
             web/package-lock.json
       - id: pages
         uses: actions/configure-pages@v6
+      - name: The latest published release (the download buttons link to its files)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release view --repo "$GITHUB_REPOSITORY" --json tagName,assets > "$RUNNER_TEMP/release.json" || echo "no release yet"
       - name: Build
         working-directory: web
         env:
+          UZT_RELEASE_JSON: ${{ runner.temp }}/release.json
           # "/<repo>" while the site lives on <user>.github.io; configure-pages can still report it for a while
           # after the custom domain is switched on, so a domain in public/CNAME always means the root path
           PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}

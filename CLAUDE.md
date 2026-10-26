@@ -76,6 +76,9 @@ profile — installing the test library there replaces the user's My Macros ▸ 
 - Search: `scripts/seo.mjs` (postbuild) writes `/`, `/ru/`, `/en/` with their own title/description (`doc.*` keys),
   keywords, hreflang, Open Graph, JSON-LD and static text in `<app-root>`; the app takes `ru`/`en` from the path.
   Keep `public/sitemap.xml` in step with its pages.
+- Downloads: the panel's app buttons come from the latest published release (`src/generated/release.ts`, written by
+  `sync-core.mjs` from `$UZT_RELEASE_JSON` in `deploy-pages.yml`; `null` locally). `release.yml` redeploys the site after
+  publishing; keep `release-info.ts` patterns in step with the file names `release.yml` gives the assets.
 
 ## Conventions
 - UI language: Uzbek (Latin), English fallback; the web app also has Uzbek Latin 2026 and Russian (asked for by the

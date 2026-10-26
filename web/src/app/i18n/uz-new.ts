@@ -107,6 +107,15 @@ export const uzNew: Record<MessageKey, string> = {
   'dl.loPythonHint': 'libreoffice-script-provider-python paketi kerak.',
   'dl.soon': 'Android (APK), Windows, macOS va Linux ilovalari hamda Office lentasi töplami:',
   'dl.releases': 'GitHub Releases — oxirgi versiya',
+  'dl.appsTitle': 'Ilovalar',
+  'dl.appWindows': 'Windows 10/11 ilovasi',
+  'dl.appMac': 'macOS ilovasi (12 va keyingi)',
+  'dl.appLinux': 'Linux ilovasi (AppImage, x86-64)',
+  'dl.appAndroid': 'Android ilovasi (7 va keyingi, APK)',
+  'dl.appOffice': 'Word va Excel uçun örnatuvçi (Windows)',
+  'dl.appMeta': '{version} · {size} MB',
+  'dl.unsigned': 'Windows va macOS fayllari raqamli imzosiz. Windows ogohlantirsa, «More info ▸ Run anyway» (Qöşimça maʼlumot ▸ Baribir işga tuşiriş)ni tanlang; macOSda birinçi marta: öng tugma ▸ Open.',
+  'dl.checksums': 'SHA-256 nazorat yiğindilari (SHA256SUMS.txt)',
   'footer.source': 'manba kodi',
   'footer.privacy': 'Matn va fayllar heç qayerga yuborilmaydi.'
 };

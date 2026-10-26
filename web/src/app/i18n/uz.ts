@@ -102,6 +102,15 @@ export const uz = {
   'dl.loPythonHint': 'libreoffice-script-provider-python paketi kerak.',
   'dl.soon': 'Android (APK), Windows, macOS va Linux ilovalari hamda Office lentasi toʻplami:',
   'dl.releases': 'GitHub Releases — oxirgi versiya',
+  'dl.appsTitle': 'Ilovalar',
+  'dl.appWindows': 'Windows 10/11 ilovasi',
+  'dl.appMac': 'macOS ilovasi (12 va keyingi)',
+  'dl.appLinux': 'Linux ilovasi (AppImage, x86-64)',
+  'dl.appAndroid': 'Android ilovasi (7 va keyingi, APK)',
+  'dl.appOffice': 'Word va Excel uchun oʻrnatuvchi (Windows)',
+  'dl.appMeta': '{version} · {size} MB',
+  'dl.unsigned': 'Windows va macOS fayllari raqamli imzosiz. Windows ogohlantirsa, «More info ▸ Run anyway» (Qoʻshimcha maʼlumot ▸ Baribir ishga tushirish)ni tanlang; macOSda birinchi marta: oʻng tugma ▸ Open.',
+  'dl.checksums': 'SHA-256 nazorat yigʻindilari (SHA256SUMS.txt)',
   'footer.source': 'manba kodi',
   'footer.privacy': 'Matn va fayllar hech qayerga yuborilmaydi.'
 };
