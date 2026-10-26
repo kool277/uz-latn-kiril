@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(UzTranslit
-    VERSION 1.2.0
+    VERSION 1.3.0
     DESCRIPTION "Uzbek script converter: Cyrillic, Latin 1995, Latin 2026"
     HOMEPAGE_URL "https://latin.jaybi.uz"
     LANGUAGES CXX)

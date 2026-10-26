@@ -33,7 +33,8 @@ shrunk (R8) APK on an Android 14 emulator: `scripts/smoke-test.sh` shares "Toshk
 
 Release builds are signed with the **upload key** (PKCS12, RSA 4096, alias `upload`, valid until 2056). Google Play
 re-signs the app for users with its own app-signing key (Play App Signing), so a lost upload key can be replaced
-through Play Console support, but keep a backup of it. The key never goes into the repository: Gradle reads it from
+through Play Console support, but keep a backup of it: the keystore (without its password) is in the private
+repository `kool277/uztranslit-signing-backup`; the password belongs in a password manager. The key never goes into the repository: Gradle reads it from
 the environment.
 
 ```bash
