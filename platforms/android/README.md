@@ -41,8 +41,8 @@ export UZT_UPLOAD_STORE_FILE=/path/to/uztranslit-upload.jks UZT_UPLOAD_STORE_PAS
 ./gradlew assembleRelease bundleRelease     # app/build/outputs/apk/release/app-release.apk, bundle/release/app-release.aab
 ```
 
-CI gets the same from the secrets `ANDROID_UPLOAD_KEYSTORE_BASE64` (the .jks, base64), `ANDROID_UPLOAD_STORE_PASSWORD`
-and `ANDROID_UPLOAD_KEY_ALIAS`; pull requests from forks have no secrets and build debug only. Certificate SHA-256:
+CI gets the same from the secrets `ANDROID_UPLOAD_KEYSTORE_BASE64` (the .jks, base64) and
+`ANDROID_UPLOAD_STORE_PASSWORD`; pull requests from forks have no secrets and build debug only. Certificate SHA-256:
 `43:7D:47:AF:8E:AA:AC:FD:97:3A:C3:33:54:19:09:42:80:F5:D2:43:C8:05:2D:AF:A4:54:A2:97:3C:29:05:AE`
 (`upload-certificate.sha256`; Play Console shows it under *Test and release ▸ App integrity* after the first upload).
 

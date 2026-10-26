@@ -71,7 +71,7 @@ jobs:
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
           UZT_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
-          UZT_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          UZT_UPLOAD_KEY_ALIAS: upload      # not a secret (a secret "upload" would mask the word in every log line)
         run: |
           export UZT_UPLOAD_STORE_FILE="$RUNNER_TEMP/upload.jks"
           printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$UZT_UPLOAD_STORE_FILE"
