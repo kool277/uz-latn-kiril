@@ -60,8 +60,10 @@ jobs:
         run: |
           version="${GITHUB_REF_NAME#v}"
           find artifacts -type f | sort
-          cp artifacts/app-release.apk "dist/UzTranslit-$version-android.apk"
-          cp artifacts/app-release.aab "dist/UzTranslit-$version-android.aab"
+          # an artifact of several files keeps their folders (apk/release/, bundle/release/): find them by name
+          one() { f=$(find artifacts -type f -name "$1"); [ "$(printf '%s\n' "$f" | grep -c .)" -eq 1 ] || { echo "need exactly one $1: $f"; exit 1; }; printf '%s' "$f"; }
+          cp "$(one app-release.apk)" "dist/UzTranslit-$version-android.apk"
+          cp "$(one app-release.aab)" "dist/UzTranslit-$version-android.aab"
           cp artifacts/UzTranslit-Office-Setup.exe "dist/UzTranslit-$version-Office-Setup.exe"
           find artifacts -name 'UzTranslit-*' \( -name '*.AppImage' -o -name '*-setup.exe' -o -name '*.dmg' \) -exec cp {} dist/ \;
       - name: Web app (self-hosted copy of latin.jaybi.uz, served from the root of any static web server)
