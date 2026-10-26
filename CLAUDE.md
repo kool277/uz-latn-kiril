@@ -9,7 +9,8 @@ UzTranslit converts Uzbek text between Cyrillic (`cyr`), Latin 1995 (`lat`) and 
 - Ports: `core/js` (reference), `core/python`, `core/wasm` (AssemblyScript → WebAssembly, plus the same engine translated
   to plain JS by wasm2js), `office-vba` (VBA 5–7, also feeds `libreoffice/` through `tools/make_lo_basic.py`),
   `platforms/android` (Kotlin), `platforms/ios` (Swift), `platforms/qt-desktop` (C++/Qt 6). The dictionary (SPEC §6)
-  is copied in every one of them; `platforms/office-addin` (Office.js) uses `core/js`.
+  is copied in every one of them; `platforms/office-addin` (Office.js) uses `core/js`; `platforms/office-installer`
+  (PyInstaller exe) installs `office-vba` with its ribbon into Word/Excel.
 
 ## How to test
 ```
@@ -25,6 +26,7 @@ python3 tools/lo_run_macro.py UzOffice.UzCheck.Run build/lo-test/office.txt   # 
 python3 tools/lo_extension_test.py     # both .oxt end to end in Writer/Calc/Impress (+ Calc formulas via My Macros)
 python3 tools/vba_lint.py office-vba/*.bas     # undeclared names etc.: one would break every macro in real VBA
 python3 tools/test_add_ribbon.py       # Office ribbon injection (tools/add_ribbon.py)
+python3 platforms/office-installer/test_installer.py   # Office installer vs fake Word/Excel (exe: office-installer.yml)
 node platforms/office-addin/test/run.mjs       # add-in logic against fake Word/Excel/PowerPoint
 python3 tools/test_mine_dictionary.py  # dictionary miner (tools/mine_dictionary.py)
 platforms/android: ./gradlew test assembleDebug · platforms/ios/scripts/test.sh · platforms/qt-desktop: README (Docker)

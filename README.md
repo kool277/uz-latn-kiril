@@ -17,6 +17,7 @@ All six directions, with the rules that matter: е/э, ц → s/ts, ъ/ь, йў 
 | MS Office macro module (Word/Excel/PowerPoint 97 → 2026, VBA 5–7) | `office-vba/UzTranslit.bas` | engine executed in LibreOffice Basic VBA mode: 214/214 ✔, 3,500 differential ✔; document macros compiled + linted (Office itself not in CI) |
 | Desktop (Qt 6): Windows installer, macOS dmg, Linux AppImage — editor with live conversion, text/Markdown/SRT/HTML/XML files, folder batch, tray clipboard actions, `uztranslit` CLI | `platforms/qt-desktop/` | C++ core 216/216 ✔, 22,000 differential ✔, 7 ctest suites (CLI, GUI offscreen, documents, translations); packages built in CI, unsigned |
 | Office ribbon tab (2007+): `UzTranslitRibbon.bas` + `office-vba/ribbon/`, put into a .dotm/.xlam/.ppam by `tools/add_ribbon.py` | `office-vba/ribbon/` | injection tested on Word/Excel/PowerPoint files; `UzSelfTest` 29/29 in CI |
+| Office installer for Windows: `UzTranslit-<version>-Office-Setup.exe` (PyInstaller) builds `UzTranslit.dotm` / `UzTranslit.xlam` with Word and Excel through COM, adds the ribbon, puts them into STARTUP / XLSTART | `platforms/office-installer/` | 28 checks against fake Word/Excel; exe built and started on Windows in CI (no Office in CI) |
 | Office add-in (Office.js) for Word, Excel, PowerPoint on the web, Mac, iPad and Microsoft 365, served at latin.jaybi.uz/office | `platforms/office-addin/` | manifests valid (Microsoft validator); logic tested against fake hosts + the 20,000-case corpus; task pane tested in Chromium |
 | LibreOffice extension (menu Tools ▸ UzTranslit) | `libreoffice/uztranslit-libreoffice.oxt` | installed + e2e-tested in Writer/Calc/Impress ✔ |
 | LibreOffice Basic module / Python edition | `libreoffice/UzTranslitLO.bas`, `uztranslit-libreoffice-python.oxt` | ✔ / needs Python provider |
@@ -27,8 +28,8 @@ All six directions, with the rules that matter: е/э, ц → s/ts, ъ/ь, йў 
 ## Downloads
 
 Every [release](https://github.com/kool277/uz-latn-kiril/releases/latest) is built by `.github/workflows/release.yml`
-from a `v*` tag after every suite passes: Windows installer, macOS dmg, Linux AppImage, Android APK, Office macros and
-ribbon kit, Office add-in manifest, LibreOffice extensions and the web app as a zip, with `SHA256SUMS.txt`
+from a `v*` tag after every suite passes: Windows installer, macOS dmg, Linux AppImage, Android APK, Office installer, Office
+macros and ribbon kit, Office add-in manifest, LibreOffice extensions and the web app as a zip, with `SHA256SUMS.txt`
 (`sha256sum -c SHA256SUMS.txt --ignore-missing`).
 
 ## Quick start

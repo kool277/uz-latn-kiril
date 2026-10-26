@@ -28,18 +28,18 @@ REL_IMAGE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships
 PKG_RELS = "http://schemas.openxmlformats.org/package/2006/relationships"
 
 
-def ribbon_parts():
+def ribbon_parts(ribbon=RIBBON):
     parts = {}
-    images = sorted(f for f in os.listdir(os.path.join(RIBBON, "images")) if f.endswith(".png"))
+    images = sorted(f for f in os.listdir(os.path.join(ribbon, "images")) if f.endswith(".png"))
     rels = ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="%s">' % PKG_RELS
             + "".join('<Relationship Id=%s Type="%s" Target="images/%s"/>' % (quoteattr(f[:-4]), REL_IMAGE, f) for f in images)
             + "</Relationships>")
     for name in ("customUI.xml", "customUI14.xml"):
-        with open(os.path.join(RIBBON, name), "rb") as f:
+        with open(os.path.join(ribbon, name), "rb") as f:
             parts["customUI/" + name] = f.read()
         parts["customUI/_rels/%s.rels" % name] = rels.encode("utf-8")
     for img in images:
-        with open(os.path.join(RIBBON, "images", img), "rb") as f:
+        with open(os.path.join(ribbon, "images", img), "rb") as f:
             parts["customUI/images/" + img] = f.read()
     return parts
 
@@ -65,7 +65,8 @@ def patch_content_types(xml):
     return xml
 
 
-def add_ribbon(src, dst, force=False):
+def add_ribbon(src, dst, force=False, ribbon=RIBBON):
+    """ribbon: the folder with customUI*.xml and images/ (the Office installer bundles its own copy)"""
     with zipfile.ZipFile(src) as z:
         names = z.namelist()
         if "[Content_Types].xml" not in names or "_rels/.rels" not in names:
@@ -73,7 +74,7 @@ def add_ribbon(src, dst, force=False):
         if not any(n.endswith("vbaProject.bin") for n in names) and not force:
             raise SystemExit("%s has no VBA project: import UzTranslit.bas and UzTranslitRibbon.bas in Office and save it as a "
                              "macro-enabled file (.dotm, .xlam, .ppam ...) first" % src)
-        parts = ribbon_parts()
+        parts = ribbon_parts(ribbon)
         fd, tmp = tempfile.mkstemp(suffix=".zip", dir=os.path.dirname(os.path.abspath(dst)))
         os.close(fd)
         try:

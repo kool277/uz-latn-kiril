@@ -2,6 +2,15 @@
 
 One file: `office-vba/UzTranslit.bas`. Pure VBA, no references, no Unicode in the source (everything is built with `ChrW`), so it imports cleanly into any VBA editor code page and runs on Office 97, 2000, XP, 2003, 2007, 2010, 2013, 2016, 2019, 2021, 2024, Microsoft 365 (Windows and Mac). It cannot run in Office on the web or on iPad — use https://latin.jaybi.uz or the Office.js add-in there.
 
+## Install with the Windows installer (Word and Excel 2007 and later)
+
+Download `UzTranslit-<version>-Office-Setup.exe` from the [latest release](https://github.com/kool277/uz-latn-kiril/releases/latest),
+close Word and Excel, run it and press *Install*: Word and Excel get the **UzTranslit** tab, nothing else to do.
+It builds `UzTranslit.dotm` / `UzTranslit.xlam` with Office itself and puts them into the startup folders;
+`Normal.dotm` and `PERSONAL.XLSB` stay untouched. Details: `platforms/office-installer/README.md`.
+
+The steps below do the same by hand, also for PowerPoint, Office 97–2003 and Office for Mac.
+
 ## Install (any version)
 
 1. Open Word / Excel / PowerPoint. Press **Alt+F11** (Visual Basic Editor).

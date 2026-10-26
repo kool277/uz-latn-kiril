@@ -1,0 +1,59 @@
+name: Office installer (Windows)
+
+# Builds platforms/office-installer into UzTranslit-Office-Setup.exe (PyInstaller) on Windows, runs its tests (fake
+# Word/Excel: GitHub's runners have no Office) and starts the exe once to check that it carries every file it needs.
+on:
+  push:
+    branches: [main]
+    paths:
+      - platforms/office-installer/**
+      - office-vba/**
+      - tools/add_ribbon.py
+      - .github/workflows/office-installer.yml
+  pull_request:
+    paths:
+      - platforms/office-installer/**
+      - office-vba/**
+      - tools/add_ribbon.py
+      - .github/workflows/office-installer.yml
+  workflow_dispatch:
+  workflow_call:      # release.yml attaches the exe to the release
+
+permissions:
+  contents: read
+
+concurrency:
+  group: office-installer-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Office installer (PyInstaller exe)
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - name: Install PyInstaller, pywin32, Pillow
+        run: python -m pip install -r platforms/office-installer/requirements.txt
+      - name: Tests (fake Word and Excel)
+        run: |
+          python platforms/office-installer/test_installer.py
+          python tools/test_add_ribbon.py
+      - name: Build the exe
+        run: python platforms/office-installer/build.py
+      - name: The exe starts and carries the modules and the ribbon
+        shell: pwsh
+        run: |
+          $exe = "build/office-installer/dist/UzTranslit-Office-Setup.exe"
+          $p = Start-Process -FilePath $exe -ArgumentList "--check" -Wait -PassThru
+          "exit code: $($p.ExitCode)"
+          if ($p.ExitCode -ne 0) { exit 1 }
+          Get-Item $exe | Format-List Name, Length
+      - uses: actions/upload-artifact@v7
+        with:
+          name: uztranslit-office-installer
+          path: build/office-installer/dist/UzTranslit-Office-Setup.exe
+          if-no-files-found: error

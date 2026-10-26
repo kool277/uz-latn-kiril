@@ -16,6 +16,8 @@ echo "== VBA lint (what the VBA editor would reject)"; python3 "$ROOT/tools/vba_
 echo "== Office ribbon (tools/add_ribbon.py)"
 python3 "$ROOT/tools/test_add_ribbon.py" > "$ROOT/build/ribbon-test.log" 2>&1 || fail=1
 grep -v "^  ok" "$ROOT/build/ribbon-test.log"
+echo "== Office installer (platforms/office-installer, fake Word/Excel)"
+python3 "$ROOT/platforms/office-installer/test_installer.py" | tail -1; [ "${PIPESTATUS[0]}" -eq 0 ] || fail=1
 echo "== Differential corpus"; node "$ROOT/tools/make_differential.mjs" || fail=1
 echo "== Dictionary miner (tools/mine_dictionary.py on a synthetic parallel corpus)"
 python3 "$ROOT/tools/test_mine_dictionary.py" | tail -1; [ "${PIPESTATUS[0]}" -eq 0 ] || fail=1
