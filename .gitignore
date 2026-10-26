@@ -42,3 +42,8 @@ web/test/generated/
 web/public/wasm/
 web/public/downloads/
 web/public/office/
+# signing keys never go into the repository (platforms/android/README.md ▸ Signing)
+*.jks
+*.keystore
+*.p12
+*.p8

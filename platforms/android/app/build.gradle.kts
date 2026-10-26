@@ -18,8 +18,24 @@ android {
         versionName = "1.2.0"
     }
 
+    // The upload key for Google Play (Play App Signing re-signs for users); README.md ▸ Signing. Only from the
+    // environment, never from the repository: CI decodes it from secrets. Without it, release builds are unsigned.
+    val uploadStore = System.getenv("UZT_UPLOAD_STORE_FILE")
+    signingConfigs {
+        if (!uploadStore.isNullOrEmpty()) {
+            create("upload") {
+                storeFile = file(uploadStore)
+                storeType = "PKCS12"
+                storePassword = System.getenv("UZT_UPLOAD_STORE_PASSWORD")
+                keyAlias = System.getenv("UZT_UPLOAD_KEY_ALIAS") ?: "upload"
+                keyPassword = System.getenv("UZT_UPLOAD_STORE_PASSWORD")   // PKCS12: one password for store and key
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfigs.findByName("upload")?.let { signingConfig = it }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))

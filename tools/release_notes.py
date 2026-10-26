@@ -25,7 +25,9 @@ def main():
         "| `UzTranslit-*-setup.exe` | Windows 10/11 | run the installer (unsigned: *More info ▸ Run anyway*) |",
         "| `UzTranslit-*.dmg` | macOS 12+ | open, drag to Applications; first start: right-click ▸ Open (not notarized) |",
         "| `UzTranslit-*.AppImage` | Linux (glibc 2.39+) | `chmod +x` and run |",
-        "| `UzTranslit-*-android.apk` | Android 7+ | allow installing from this source; signed with a debug key, so it replaces no store version |",
+        "| `UzTranslit-*-android.apk` | Android 7+ | allow installing from this source; signed with the UzTranslit upload key "
+        "(versions up to 1.2.0 were debug-signed: uninstall those once) |",
+        "| `UzTranslit-*-android.aab` | Google Play Console | the same app as an Android App Bundle, for *Create new release* |",
         "| `UzTranslit-*-Office-Setup.exe` | Word and Excel 2007–2026 on Windows | run it, close Word and Excel, *Install*: "
         "adds the UzTranslit tab (unsigned: *More info ▸ Run anyway*) |",
         "| `UzTranslit.bas`, `UzTranslitRibbon.bas`, `UzTranslit-ribbon-kit.zip` | Word, Excel, PowerPoint 97–2026 | docs/OFFICE_INSTALL.md |",

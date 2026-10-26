@@ -21,7 +21,7 @@ All six directions, with the rules that matter: е/э, ц → s/ts, ъ/ь, йў 
 | Office add-in (Office.js) for Word, Excel, PowerPoint on the web, Mac, iPad and Microsoft 365, served at latin.jaybi.uz/office | `platforms/office-addin/` | manifests valid (Microsoft validator); logic tested against fake hosts + the 20,000-case corpus; task pane tested in Chromium |
 | LibreOffice extension (menu Tools ▸ UzTranslit) | `libreoffice/uztranslit-libreoffice.oxt` | installed + e2e-tested in Writer/Calc/Impress ✔ |
 | LibreOffice Basic module / Python edition | `libreoffice/UzTranslitLO.bas`, `uztranslit-libreoffice-python.oxt` | ✔ / needs Python provider |
-| Android 7+ — Kotlin core + Compose app: live converter, *Process text* menu on selected text, share sheet, .txt files, Quick Settings tile | `platforms/android/` | Kotlin core 216/216 ✔, 20,000 differential ✔, 264 JVM tests; debug APK built in CI |
+| Android 7+ — Kotlin core + Compose app: live converter, *Process text* menu on selected text, share sheet, .txt files, Quick Settings tile | `platforms/android/` | Kotlin core 216/216 ✔, 20,000 differential ✔, 264 JVM tests; signed release APK + bundle built in CI and started on an emulator |
 | iOS / iPadOS / macOS — Swift package `UzTranslitCore`, SwiftUI app with Share and Action extensions, macOS app with a Services menu item | `platforms/ios/` | Swift core 216/216 ✔, 20,000 differential ✔ (Linux, CI); apps built unsigned on macOS in CI — signing/TestFlight need your Apple team (`platforms/ios/README.md`) |
 | Claude Code master prompt (Android, iOS, Qt 6, Office.js add-in, CI, releases) | `CLAUDE_CODE_PROMPT.md` + `CLAUDE.md` | run it |
 

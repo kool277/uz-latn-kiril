@@ -29,7 +29,7 @@ python3 tools/test_add_ribbon.py       # Office ribbon injection (tools/add_ribb
 python3 platforms/office-installer/test_installer.py   # Office installer vs fake Word/Excel (exe: office-installer.yml)
 node platforms/office-addin/test/run.mjs       # add-in logic against fake Word/Excel/PowerPoint
 python3 tools/test_mine_dictionary.py  # dictionary miner (tools/mine_dictionary.py)
-platforms/android: ./gradlew test assembleDebug · platforms/ios/scripts/test.sh · platforms/qt-desktop: README (Docker)
+platforms/android: ./gradlew test assembleDebug (release: README ▸ Signing) · platforms/ios/scripts/test.sh · platforms/qt-desktop: README (Docker)
 python3 tools/build_oxt.py             # rebuilds both .oxt files (reproducible: commit them with their sources)
 python3 tools/make_doc_fixtures.py     # regenerates web/test/fixtures/docs/* with LibreOffice
 ```

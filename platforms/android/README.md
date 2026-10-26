@@ -24,7 +24,30 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
 CI: [`.github/workflows/android.yml`](../../.github/workflows/android.yml) generates the differential corpus, runs
-`./gradlew test assembleDebug` and uploads the debug APK as an artifact.
+`./gradlew test assembleDebug` and uploads the debug APK as an artifact. With the upload key (below) it also builds
+the signed release APK and bundle, checks their certificate against `upload-certificate.sha256`, and starts the
+shrunk (R8) APK on an Android 14 emulator: `scripts/smoke-test.sh` shares "Toshkent shahri" to the app and expects
+"Toşkent şahri" on the screen without a crash. Releases ship that signed APK and the `.aab` for Google Play.
+
+### Signing
+
+Release builds are signed with the **upload key** (PKCS12, RSA 4096, alias `upload`, valid until 2056). Google Play
+re-signs the app for users with its own app-signing key (Play App Signing), so a lost upload key can be replaced
+through Play Console support, but keep a backup of it. The key never goes into the repository: Gradle reads it from
+the environment.
+
+```bash
+export UZT_UPLOAD_STORE_FILE=/path/to/uztranslit-upload.jks UZT_UPLOAD_STORE_PASSWORD=…   # UZT_UPLOAD_KEY_ALIAS: upload
+./gradlew assembleRelease bundleRelease     # app/build/outputs/apk/release/app-release.apk, bundle/release/app-release.aab
+```
+
+CI gets the same from the secrets `ANDROID_UPLOAD_KEYSTORE_BASE64` (the .jks, base64), `ANDROID_UPLOAD_STORE_PASSWORD`
+and `ANDROID_UPLOAD_KEY_ALIAS`; pull requests from forks have no secrets and build debug only. Certificate SHA-256:
+`43:7D:47:AF:8E:AA:AC:FD:97:3A:C3:33:54:19:09:42:80:F5:D2:43:C8:05:2D:AF:A4:54:A2:97:3C:29:05:AE`
+(`upload-certificate.sha256`; Play Console shows it under *Test and release ▸ App integrity* after the first upload).
+
+Releases up to 1.2.0 were signed with a debug key: Android refuses to update those with the signed APK, so uninstall
+the old version once.
 
 ### What the tests check
 
