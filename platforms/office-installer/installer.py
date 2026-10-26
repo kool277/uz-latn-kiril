@@ -277,6 +277,14 @@ def self_check():
     images = os.listdir(os.path.join(RIBBON_DIR, "images"))
     if len(add_ribbon.ribbon_parts(RIBBON_DIR)) != 4 + len(images):
         raise InstallError("ribbon parts incomplete")
+    if sys.platform == "win32":                 # imported only when used: make sure PyInstaller bundled them
+        try:
+            import pythoncom  # noqa: F401
+            import tkinter  # noqa: F401
+            import win32com.client  # noqa: F401
+            import winreg  # noqa: F401
+        except ImportError as e:
+            raise InstallError("not bundled: %s" % e)
     return "ok: %d modules, ribbon with %d images" % (len(MODULES), len(images))
 
 
