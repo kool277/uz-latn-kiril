@@ -40,7 +40,8 @@ class DictionaryTest {
         assertEquals("sirkul", UzDictionary.longestPrefixOf("sirkulni"))
         assertEquals("sirk", UzDictionary.longestPrefixOf("sirklar"))
         assertEquals("kompyuter", UzDictionary.longestPrefixOf("kompyuterlar"))
-        assertNull(UzDictionary.longestPrefixOf("sentabr")) // the SPEC keeps "sent" out on purpose
+        assertEquals("sentabr", UzDictionary.longestPrefixOf("sentabrda"))
+        assertNull(UzDictionary.longestPrefixOf("sentimental")) // the SPEC keeps "sent" out on purpose
         assertNull(UzDictionary.longestPrefixOf("salom"))
         assertNull(UzDictionary.longestPrefixOf(""))
         assertNull(UzDictionary.longestPrefixOf("сирк"))

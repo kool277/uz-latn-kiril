@@ -11,7 +11,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '1.0.0';
+  var VERSION = '1.1.0';
   var OKINA = 'ʻ';   // ʻ  used in Oʻ Gʻ
   var TUTUQ = 'ʼ';   // ʼ  tutuq belgisi
 
@@ -103,7 +103,23 @@
     'proporsiya пропорция|porsiya порция|konferensiya конференция|litsenziya лицензия|litsey лицей|ofitser офицер|' +
     'protsent процент|protsess процесс|protsedura процедура|konsert концерт|konsepsiya концепция|konsentratsiya концентрация|' +
     'konsern концерн|potensial потенциал|differensial дифференциал|sotsial социал|sotsiologiya социология|spetsial специал|spetsifik специфик|' +
-    'kvarts кварц|shprits шприц|plats плац|blits блиц';
+    'kvarts кварц|shprits шприц|plats плац|blits блиц|' +
+    'stansiya станция|instansiya инстанция|distansiya дистанция|kvitansiya квитанция|korrupsiya коррупция|inspeksiya инспекция|' +
+    'direksiya дирекция|instruksiya инструкция|rekonstruksiya реконструкция|korreksiya коррекция|induksiya индукция|' +
+    'tranzaksiya транзакция|funksional функционал|aksent акцент|aksiz акциз|auksion аукцион|' +
+    'fransiya франция|fransuz француз|shveytsariya швейцария|' +
+    'yanvar январь|fevral февраль|aprel апрель|iyun июнь|iyul июль|sentabr сентябрь|sentyabr сентябрь|' +
+    'oktabr октябрь|oktyabr октябрь|noyabr ноябрь|dekabr декабрь|' +
+    'albom альбом|palto пальто|film фильм|rol роль|avtomobil автомобиль|spektakl спектакль|medal медаль|model модель|' +
+    'mebel мебель|portfel портфель|stil стиль|tekstil текстиль|rubl рубль|dizel дизель|kalendar календарь|slovar словарь|' +
+    'bukvar букварь|sekretar секретарь|ansambl ансамбль|parallel параллель|festival фестиваль|pedal педаль|detal деталь|' +
+    'panel панель|kabel кабель|otel отель|motel мотель|shinel шинель|kafel кафель|tabel табель|shtempel штемпель|' +
+    'vertikal вертикаль|gorizontal горизонталь|diagonal диагональ|magistral магистраль|spiral спираль|gospital госпиталь|' +
+    'dvigatel двигатель|asfalt асфальт|vals вальс|volt вольт|pult пульт|kult культ|tyulpan тюльпан|shampun шампунь|' +
+    'kreml кремль|alpinist альпинист|alpinizm альпинизм|konsult консульт|rezultat результат|fakultet факультет|' +
+    'fakultativ факультатив|kalkulyator калькулятор|kalkulyatsiya калькуляция|' +
+    'pavilyon павильон|pochtalyon почтальон|kompanyon компаньон|rayon район|mayor майор|mayonez майонез|' +
+    "mo'jiza мўъжиза|mo'tabar мўътабар|mo'tadil мўътадил|mo'jaz мўъжаз";
   var DICT = {};
   var DICT_KEYS = [];
   (function () {
@@ -166,7 +182,8 @@
           else if (cyrLower(P) === 'ў' && o.dropHardSignAfterO) r = '';
           else r = o.tutuq;
           break;
-        case 'ь': r = ''; break;                                 // ь
+        case 'ь': r = cyrLower(N) === 'о' ? 'y' : ''; break;     // ь (батальон → batalyon)
+        case 'я': r = monthTa(text, i) ? 'a' : 'ya'; break;      // я (сентябрь → sentabr)
         case 'ш': case 'щ': r = isNew ? 'ş' : 'sh'; break;   // ш щ
         case 'ч': r = isNew ? 'ç' : 'ch'; break;                 // ч
         case 'ў': r = isNew ? 'ö' : 'o' + o.okina; break;        // ў
@@ -177,6 +194,16 @@
       out += caseOut(text, i, up, r);
     }
     return out;
+  }
+
+  // the я of сентябр… / октябр…: the Latin spelling of these months is sentabr, oktabr
+  function monthTa(text, i) {
+    var start = i;
+    while (start > 0 && isLetter(text.charAt(start - 1))) start--;
+    var stem = i - start === 4 ? 'сентябр' : i - start === 3 ? 'октябр' : '';
+    if (!stem || start + stem.length > text.length) return false;
+    for (var k = 0; k < stem.length; k++) if (cyrLower(text.charAt(start + k)) !== stem.charAt(k)) return false;
+    return true;
   }
 
   // ---------------------------------------------------------------- Latin → Cyrillic
@@ -226,6 +253,7 @@
         i++; continue;
       }
       if (L === 't' && NL === 's') {
+        if (!prevIsLetter && !(i > 0 && isApos(text.charAt(i - 1)))) { out += up ? 'Ц' : 'ц'; i += 2; continue; }
         var rest = (text.substr(i + 2, 3)).toLowerCase();
         if (rest.indexOf('iya') === 0 || rest.indexOf('ion') === 0) { out += up ? 'Ц' : 'ц'; i += 2; continue; }
         var wordEnds = (i + 2 >= n) || !isLat(text.charAt(i + 2));
@@ -281,6 +309,8 @@
     if (letters >= 2 && uppers === letters) cyrStem = upperStr(value);
     else if (firstUpper) cyrStem = upperFirst(value);
     else cyrStem = value;
+    // a final ь goes when a suffix follows (июль, июлдаги)
+    if (cyrLower(cyrStem.charAt(cyrStem.length - 1)) === 'ь' && isLat(rest.charAt(0))) cyrStem = cyrStem.slice(0, -1);
     var lastSrc = stemSrc.charAt(stemSrc.length - 1);
     return cyrStem + latinToCyrScan(rest, source, o, lastSrc);
   }

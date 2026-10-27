@@ -32,7 +32,7 @@ export class App {
   protected readonly tab = signal<Tab>('text');
   protected readonly langs = LANGS;
   protected readonly repo = REPO_URL;
-  protected readonly version = '1.0.0';
+  protected readonly version = '1.1.0';
   protected readonly engineLabel = computed(() => {
     const k = this.engine.kind();
     return k ? this.i18n.t(k === 'wasm' ? 'engine.wasm' : 'engine.js', { n: this.engine.threads }) : this.i18n.t('engine.loading');

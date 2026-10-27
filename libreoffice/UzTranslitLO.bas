@@ -2,7 +2,7 @@
 Option Explicit
 Option VBASupport 1
 ' =====================================================================================
-'  UzTranslit v1.0.0 -- O'zbek alifbo konvertori for Microsoft Office 97 ... 2026
+'  UzTranslit v1.1.0 -- O'zbek alifbo konvertori for Microsoft Office 97 ... 2026
 '  Word, Excel, PowerPoint (Windows and Mac). One module, no references, pure VBA 5/6/7.
 '
 '  Scripts:  "cyr"  Kirill / Cyrillic (1940)
@@ -282,7 +282,10 @@ Private Function CyrToLatin(ByVal s As String, ByVal toNew As Boolean) As String
                     Else
                         r = tutuqS
                     End If
-                Case &H44C: r = ""                                       ' cyr soft sign
+                Case &H44C                                               ' cyr soft sign (+ o: batalyon)
+                    If NL = &H43E Then r = "y" Else r = ""
+                Case &H44F                                               ' cyr ya (sentabr, oktabr)
+                    If MonthTa(s, i, n) Then r = "a" Else r = "ya"
                 Case &H448, &H449                                        ' cyr sha, shcha
                     If toNew Then r = ChrW(&H15F) Else r = "sh"
                 Case &H447                                               ' cyr che
@@ -301,6 +304,28 @@ Private Function CyrToLatin(ByVal s As String, ByVal toNew As Boolean) As String
         End If
     Next
     CyrToLatin = Left$(buf, pos)
+End Function
+
+' The cyr ya of the months sentyabr / oktyabr: their Latin spelling is sentabr, oktabr.
+Private Function MonthTa(ByVal s As String, ByVal i As Long, ByVal n As Long) As Boolean
+    Dim st As Long, stem As String, k As Long
+    st = i
+    Do While st > 1
+        If Not IsLetter(CodeAt(s, st - 1)) Then Exit Do
+        st = st - 1
+    Loop
+    If i - st = 4 Then
+        stem = U("0441 0435 043D 0442 044F 0431 0440")
+    ElseIf i - st = 3 Then
+        stem = U("043E 043A 0442 044F 0431 0440")
+    Else
+        Exit Function
+    End If
+    If st + Len(stem) - 1 > n Then Exit Function
+    For k = 1 To Len(stem)
+        If CyrLower(CodeAt(s, st + k - 1)) <> CodeAt(stem, k) Then Exit Function
+    Next
+    MonthTa = True
 End Function
 
 Private Function C2L(ByVal L As Long) As String
@@ -462,6 +487,9 @@ End Function
 
 Private Function TsRule(ByVal s As String, ByVal i As Long, ByVal n As Long, ByVal P As Long) As Boolean
     Dim rest As String, wordEnds As Boolean
+    If Not IsLat(P) Then                                         ' word-initial ts: tsirk (not o'tsa)
+        If i = 1 Or Not IsApos(P) Then TsRule = True: Exit Function
+    End If
     rest = LCase$(Mid$(s, i + 2, 3))
     If Left$(rest, 3) = "iya" Or Left$(rest, 3) = "ion" Then TsRule = True: Exit Function
     If UzOptNoTsFinal Then Exit Function
@@ -524,6 +552,10 @@ Private Function WordWithDict(ByVal w As String, ByVal isNew As Boolean) As Stri
         cyrStem = UpperFirst(value)
     Else
         cyrStem = value
+    End If
+    ' a final soft sign goes when a suffix follows (iyul, iyuldagi)
+    If Len(rest) > 0 Then
+        If IsLat(CodeAt(rest, 1)) And CyrLower(CodeAt(cyrStem, Len(cyrStem))) = &H44C Then cyrStem = Left$(cyrStem, Len(cyrStem) - 1)
     End If
     WordWithDict = cyrStem & LatinToCyrScan(rest, isNew, CodeAt(stemSrc, Len(stemSrc)))
 End Function
@@ -828,12 +860,18 @@ Private Sub UzInit()
     ReDim mDictKey(1 To 128): ReDim mDictVal(1 To 128): mDictN = 0
     ' --- dictionary, longest keys first (generated from spec/SPEC.md section 6) ---
     AddD "konsentratsiya", U("043A 043E 043D 0446 0435 043D 0442 0440 0430 0446 0438 044F")
+    AddD "rekonstruksiya", U("0440 0435 043A 043E 043D 0441 0442 0440 0443 043A 0446 0438 044F")
     AddD "sivilizatsiya", U("0446 0438 0432 0438 043B 0438 0437 0430 0446 0438 044F")
+    AddD "kalkulyatsiya", U("043A 0430 043B 044C 043A 0443 043B 044F 0446 0438 044F")
     AddD "konstruksiya", U("043A 043E 043D 0441 0442 0440 0443 043A 0446 0438 044F")
     AddD "konferensiya", U("043A 043E 043D 0444 0435 0440 0435 043D 0446 0438 044F")
     AddD "differensial", U("0434 0438 0444 0444 0435 0440 0435 043D 0446 0438 0430 043B")
     AddD "sotsiologiya", U("0441 043E 0446 0438 043E 043B 043E 0433 0438 044F")
+    AddD "shveytsariya", U("0448 0432 0435 0439 0446 0430 0440 0438 044F")
     AddD "konyunktura", U("043A 043E 043D 044A 044E 043D 043A 0442 0443 0440 0430")
+    AddD "instruksiya", U("0438 043D 0441 0442 0440 0443 043A 0446 0438 044F")
+    AddD "tranzaksiya", U("0442 0440 0430 043D 0437 0430 043A 0446 0438 044F")
+    AddD "kalkulyator", U("043A 0430 043B 044C 043A 0443 043B 044F 0442 043E 0440")
     AddD "shampinyon", U("0448 0430 043C 043F 0438 043D 044C 043E 043D")
     AddD "sellyuloza", U("0446 0435 043B 043B 044E 043B 043E 0437 0430")
     AddD "seremoniya", U("0446 0435 0440 0435 043C 043E 043D 0438 044F")
@@ -843,12 +881,28 @@ Private Sub UzInit()
     AddD "litsenziya", U("043B 0438 0446 0435 043D 0437 0438 044F")
     AddD "protsedura", U("043F 0440 043E 0446 0435 0434 0443 0440 0430")
     AddD "konsepsiya", U("043A 043E 043D 0446 0435 043F 0446 0438 044F")
+    AddD "instansiya", U("0438 043D 0441 0442 0430 043D 0446 0438 044F")
+    AddD "distansiya", U("0434 0438 0441 0442 0430 043D 0446 0438 044F")
+    AddD "kvitansiya", U("043A 0432 0438 0442 0430 043D 0446 0438 044F")
+    AddD "korrupsiya", U("043A 043E 0440 0440 0443 043F 0446 0438 044F")
+    AddD "inspeksiya", U("0438 043D 0441 043F 0435 043A 0446 0438 044F")
+    AddD "korreksiya", U("043A 043E 0440 0440 0435 043A 0446 0438 044F")
+    AddD "funksional", U("0444 0443 043D 043A 0446 0438 043E 043D 0430 043B")
+    AddD "gorizontal", U("0433 043E 0440 0438 0437 043E 043D 0442 0430 043B 044C")
+    AddD "fakultativ", U("0444 0430 043A 0443 043B 044C 0442 0430 0442 0438 0432")
+    AddD "pochtalyon", U("043F 043E 0447 0442 0430 043B 044C 043E 043D")
     AddD "inyeksiya", U("0438 043D 044A 0435 043A 0446 0438 044F")
     AddD "kompyuter", U("043A 043E 043C 043F 044C 044E 0442 0435 0440")
     AddD "redaksiya", U("0440 0435 0434 0430 043A 0446 0438 044F")
     AddD "infeksiya", U("0438 043D 0444 0435 043A 0446 0438 044F")
     AddD "potensial", U("043F 043E 0442 0435 043D 0446 0438 0430 043B")
     AddD "spetsifik", U("0441 043F 0435 0446 0438 0444 0438 043A")
+    AddD "sinklinal", U("0441 0438 043D 043A 043B 0438 043D 0430 043B")
+    AddD "direksiya", U("0434 0438 0440 0435 043A 0446 0438 044F")
+    AddD "induksiya", U("0438 043D 0434 0443 043A 0446 0438 044F")
+    AddD "avtomobil", U("0430 0432 0442 043E 043C 043E 0431 0438 043B 044C")
+    AddD "magistral", U("043C 0430 0433 0438 0441 0442 0440 0430 043B 044C")
+    AddD "kompanyon", U("043A 043E 043C 043F 0430 043D 044C 043E 043D")
     AddD "adyutant", U("0430 0434 044A 044E 0442 0430 043D 0442")
     AddD "intervyu", U("0438 043D 0442 0435 0440 0432 044C 044E")
     AddD "premyera", U("043F 0440 0435 043C 044C 0435 0440 0430")
@@ -863,16 +917,33 @@ Private Sub UzInit()
     AddD "protsent", U("043F 0440 043E 0446 0435 043D 0442")
     AddD "protsess", U("043F 0440 043E 0446 0435 0441 0441")
     AddD "spetsial", U("0441 043F 0435 0446 0438 0430 043B")
+    AddD "stansiya", U("0441 0442 0430 043D 0446 0438 044F")
+    AddD "fransiya", U("0444 0440 0430 043D 0446 0438 044F")
+    AddD "sentyabr", U("0441 0435 043D 0442 044F 0431 0440 044C")
+    AddD "spektakl", U("0441 043F 0435 043A 0442 0430 043A 043B 044C")
+    AddD "kalendar", U("043A 0430 043B 0435 043D 0434 0430 0440 044C")
+    AddD "sekretar", U("0441 0435 043A 0440 0435 0442 0430 0440 044C")
+    AddD "parallel", U("043F 0430 0440 0430 043B 043B 0435 043B 044C")
+    AddD "festival", U("0444 0435 0441 0442 0438 0432 0430 043B 044C")
+    AddD "shtempel", U("0448 0442 0435 043C 043F 0435 043B 044C")
+    AddD "vertikal", U("0432 0435 0440 0442 0438 043A 0430 043B 044C")
+    AddD "diagonal", U("0434 0438 0430 0433 043E 043D 0430 043B 044C")
+    AddD "gospital", U("0433 043E 0441 043F 0438 0442 0430 043B 044C")
+    AddD "dvigatel", U("0434 0432 0438 0433 0430 0442 0435 043B 044C")
+    AddD "alpinist", U("0430 043B 044C 043F 0438 043D 0438 0441 0442")
+    AddD "alpinizm", U("0430 043B 044C 043F 0438 043D 0438 0437 043C")
+    AddD "rezultat", U("0440 0435 0437 0443 043B 044C 0442 0430 0442")
+    AddD "fakultet", U("0444 0430 043A 0443 043B 044C 0442 0435 0442")
+    AddD "pavilyon", U("043F 0430 0432 0438 043B 044C 043E 043D")
+    AddD "mo'tabar", U("043C 045E 044A 0442 0430 0431 0430 0440")
+    AddD "mo'tadil", U("043C 045E 044A 0442 0430 0434 0438 043B")
     AddD "subyekt", U("0441 0443 0431 044A 0435 043A 0442")
     AddD "tatyana", U("0442 0430 0442 044C 044F 043D 0430")
     AddD "senzura", U("0446 0435 043D 0437 0443 0440 0430")
     AddD "sentner", U("0446 0435 043D 0442 043D 0435 0440")
     AddD "silindr", U("0446 0438 043B 0438 043D 0434 0440")
     AddD "sitadel", U("0446 0438 0442 0430 0434 0435 043B 044C")
-    AddD "sirka", U("0441 0438 0440 043A 0430")
-    AddD "sinkop", U("0441 0438 043D 043A 043E 043F")
     AddD "sinkret", U("0441 0438 043D 043A 0440 0435 0442")
-    AddD "sinklinal", U("0441 0438 043D 043A 043B 0438 043D 0430 043B")
     AddD "leksiya", U("043B 0435 043A 0446 0438 044F")
     AddD "seksiya", U("0441 0435 043A 0446 0438 044F")
     AddD "porsiya", U("043F 043E 0440 0446 0438 044F")
@@ -881,6 +952,19 @@ Private Sub UzInit()
     AddD "konsern", U("043A 043E 043D 0446 0435 0440 043D")
     AddD "sotsial", U("0441 043E 0446 0438 0430 043B")
     AddD "shprits", U("0448 043F 0440 0438 0446")
+    AddD "auksion", U("0430 0443 043A 0446 0438 043E 043D")
+    AddD "fransuz", U("0444 0440 0430 043D 0446 0443 0437")
+    AddD "sentabr", U("0441 0435 043D 0442 044F 0431 0440 044C")
+    AddD "oktyabr", U("043E 043A 0442 044F 0431 0440 044C")
+    AddD "portfel", U("043F 043E 0440 0442 0444 0435 043B 044C")
+    AddD "tekstil", U("0442 0435 043A 0441 0442 0438 043B 044C")
+    AddD "ansambl", U("0430 043D 0441 0430 043C 0431 043B 044C")
+    AddD "tyulpan", U("0442 044E 043B 044C 043F 0430 043D")
+    AddD "shampun", U("0448 0430 043C 043F 0443 043D 044C")
+    AddD "konsult", U("043A 043E 043D 0441 0443 043B 044C 0442")
+    AddD "mayonez", U("043C 0430 0439 043E 043D 0435 0437")
+    AddD "mo'jiza", U("043C 045E 044A 0436 0438 0437 0430")
+    AddD "sinkop", U("0441 0438 043D 043A 043E 043F")
     AddD "obyekt", U("043E 0431 044A 0435 043A 0442")
     AddD "bulyon", U("0431 0443 043B 044C 043E 043D")
     AddD "kanyon", U("043A 0430 043D 044C 043E 043D")
@@ -897,17 +981,59 @@ Private Sub UzInit()
     AddD "aksiya", U("0430 043A 0446 0438 044F")
     AddD "litsey", U("043B 0438 0446 0435 0439")
     AddD "kvarts", U("043A 0432 0430 0440 0446")
+    AddD "aksent", U("0430 043A 0446 0435 043D 0442")
+    AddD "yanvar", U("044F 043D 0432 0430 0440 044C")
+    AddD "fevral", U("0444 0435 0432 0440 0430 043B 044C")
+    AddD "oktabr", U("043E 043A 0442 044F 0431 0440 044C")
+    AddD "noyabr", U("043D 043E 044F 0431 0440 044C")
+    AddD "dekabr", U("0434 0435 043A 0430 0431 0440 044C")
+    AddD "slovar", U("0441 043B 043E 0432 0430 0440 044C")
+    AddD "bukvar", U("0431 0443 043A 0432 0430 0440 044C")
+    AddD "shinel", U("0448 0438 043D 0435 043B 044C")
+    AddD "spiral", U("0441 043F 0438 0440 0430 043B 044C")
+    AddD "asfalt", U("0430 0441 0444 0430 043B 044C 0442")
+    AddD "mo'jaz", U("043C 045E 044A 0436 0430 0437")
+    AddD "sirka", U("0441 0438 0440 043A 0430")
     AddD "sentr", U("0446 0435 043D 0442 0440")
     AddD "sokol", U("0446 043E 043A 043E 043B 044C")
     AddD "plats", U("043F 043B 0430 0446")
     AddD "blits", U("0431 043B 0438 0446")
+    AddD "aksiz", U("0430 043A 0446 0438 0437")
+    AddD "aprel", U("0430 043F 0440 0435 043B 044C")
+    AddD "albom", U("0430 043B 044C 0431 043E 043C")
+    AddD "palto", U("043F 0430 043B 044C 0442 043E")
+    AddD "medal", U("043C 0435 0434 0430 043B 044C")
+    AddD "model", U("043C 043E 0434 0435 043B 044C")
+    AddD "mebel", U("043C 0435 0431 0435 043B 044C")
+    AddD "dizel", U("0434 0438 0437 0435 043B 044C")
+    AddD "pedal", U("043F 0435 0434 0430 043B 044C")
+    AddD "detal", U("0434 0435 0442 0430 043B 044C")
+    AddD "panel", U("043F 0430 043D 0435 043B 044C")
+    AddD "kabel", U("043A 0430 0431 0435 043B 044C")
+    AddD "motel", U("043C 043E 0442 0435 043B 044C")
+    AddD "kafel", U("043A 0430 0444 0435 043B 044C")
+    AddD "tabel", U("0442 0430 0431 0435 043B 044C")
+    AddD "kreml", U("043A 0440 0435 043C 043B 044C")
+    AddD "rayon", U("0440 0430 0439 043E 043D")
+    AddD "mayor", U("043C 0430 0439 043E 0440")
     AddD "ilya", U("0438 043B 044C 044F")
     AddD "yoga", U("0439 043E 0433 0430")
     AddD "york", U("0439 043E 0440 043A")
     AddD "sirk", U("0446 0438 0440 043A")
     AddD "sikl", U("0446 0438 043A 043B")
     AddD "sink", U("0446 0438 043D 043A")
+    AddD "iyun", U("0438 044E 043D 044C")
+    AddD "iyul", U("0438 044E 043B 044C")
+    AddD "film", U("0444 0438 043B 044C 043C")
+    AddD "stil", U("0441 0442 0438 043B 044C")
+    AddD "rubl", U("0440 0443 0431 043B 044C")
+    AddD "otel", U("043E 0442 0435 043B 044C")
+    AddD "vals", U("0432 0430 043B 044C 0441")
+    AddD "volt", U("0432 043E 043B 044C 0442")
+    AddD "pult", U("043F 0443 043B 044C 0442")
+    AddD "kult", U("043A 0443 043B 044C 0442")
     AddD "sex", U("0446 0435 0445")
+    AddD "rol", U("0440 043E 043B 044C")
 End Sub
 
 ' =====================================================================================

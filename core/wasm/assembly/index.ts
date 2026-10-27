@@ -69,7 +69,23 @@ const DICT_SRC = "obyekt объект|subyekt субъект|adyutant адъют
   "proporsiya пропорция|porsiya порция|konferensiya конференция|litsenziya лицензия|litsey лицей|ofitser офицер|" +
   "protsent процент|protsess процесс|protsedura процедура|konsert концерт|konsepsiya концепция|konsentratsiya концентрация|" +
   "konsern концерн|potensial потенциал|differensial дифференциал|sotsial социал|sotsiologiya социология|spetsial специал|spetsifik специфик|" +
-  "kvarts кварц|shprits шприц|plats плац|blits блиц";
+  "kvarts кварц|shprits шприц|plats плац|blits блиц|" +
+  "stansiya станция|instansiya инстанция|distansiya дистанция|kvitansiya квитанция|korrupsiya коррупция|" +
+  "inspeksiya инспекция|direksiya дирекция|instruksiya инструкция|rekonstruksiya реконструкция|" +
+  "korreksiya коррекция|induksiya индукция|tranzaksiya транзакция|funksional функционал|aksent акцент|" +
+  "aksiz акциз|auksion аукцион|fransiya франция|fransuz француз|shveytsariya швейцария|yanvar январь|" +
+  "fevral февраль|aprel апрель|iyun июнь|iyul июль|sentabr сентябрь|sentyabr сентябрь|oktabr октябрь|" +
+  "oktyabr октябрь|noyabr ноябрь|dekabr декабрь|albom альбом|palto пальто|film фильм|rol роль|" +
+  "avtomobil автомобиль|spektakl спектакль|medal медаль|model модель|mebel мебель|portfel портфель|" +
+  "stil стиль|tekstil текстиль|rubl рубль|dizel дизель|kalendar календарь|slovar словарь|bukvar букварь|" +
+  "sekretar секретарь|ansambl ансамбль|parallel параллель|festival фестиваль|pedal педаль|detal деталь|" +
+  "panel панель|kabel кабель|otel отель|motel мотель|shinel шинель|kafel кафель|tabel табель|" +
+  "shtempel штемпель|vertikal вертикаль|gorizontal горизонталь|diagonal диагональ|magistral магистраль|" +
+  "spiral спираль|gospital госпиталь|dvigatel двигатель|asfalt асфальт|vals вальс|volt вольт|pult пульт|" +
+  "kult культ|tyulpan тюльпан|shampun шампунь|kreml кремль|alpinist альпинист|alpinizm альпинизм|" +
+  "konsult консульт|rezultat результат|fakultet факультет|fakultativ факультатив|kalkulyator калькулятор|" +
+  "kalkulyatsiya калькуляция|pavilyon павильон|pochtalyon почтальон|kompanyon компаньон|rayon район|" +
+  "mayor майор|mayonez майонез|mo'jiza мўъжиза|mo'tabar мўътабар|mo'tadil мўътадил|mo'jaz мўъжаз";
 
 function markCode(c: i32, flag: u8): void {
   const p = FLAGS + <usize>c;
@@ -346,7 +362,8 @@ function cyrToLatin(isNew: bool): void {
         r0 = tutuq;
         break;
       }
-      case 0x44C: break; // ь
+      case 0x44C: { if (cyrLower(N) == 0x43E) r0 = 0x79; break; } // ь (батальон → batalyon)
+      case 0x44F: { if (monthTa(i)) r0 = 0x61; else { r0 = 0x79; r1 = 0x61; } break; } // я (сентябрь → sentabr)
       case 0x448: case 0x449: { if (isNew) r0 = 0x15F; else { r0 = 0x73; r1 = 0x68; } break; } // ш щ
       case 0x447: { if (isNew) r0 = 0xE7; else { r0 = 0x63; r1 = 0x68; } break; } // ч
       case 0x45E: { if (isNew) r0 = 0xF6; else { r0 = 0x6F; r1 = okina; } break; } // ў
@@ -362,6 +379,18 @@ function cyrToLatin(isNew: bool): void {
     caseOut(i, up, r0, r1);
     step(i + 1);
   }
+}
+
+// the я of сентябр… / октябр…: the Latin spelling of these months is sentabr, oktabr
+const SENTYABR = "сентябр";
+const OKTYABR = "октябр";
+function monthTa(i: i32): bool {
+  let start = i;
+  while (start > sa && isLetter(at(start - 1))) start--;
+  const stem = i - start == 4 ? SENTYABR : i - start == 3 ? OKTYABR : "";
+  if (stem.length == 0 || start + stem.length > sb) return false;
+  for (let k = 0; k < stem.length; k++) if (cyrLower(at(start + k)) != stem.charCodeAt(k)) return false;
+  return true;
 }
 
 // ---------------------------------------------------------------- Latin → Cyrillic (SPEC §5.2)
@@ -408,6 +437,7 @@ function latinToCyrScan(isNew: bool, prevCtx: i32): void {
       i++; step(i); continue;
     }
     if (L == 0x74 && NL == 0x73) {
+      if (!prevIsLetter && !(i > sa && isApos(at(i - 1)))) { put(up ? 0x426 : 0x446); i += 2; step(i); continue; } // tsirk
       const r0 = asciiLower(ch(i + 2)), r1 = asciiLower(ch(i + 3)), r2 = asciiLower(ch(i + 4));
       if (r0 == 0x69 && ((r1 == 0x79 && r2 == 0x61) || (r1 == 0x6F && r2 == 0x6E))) { // -tsiya, -tsion
         put(up ? 0x426 : 0x446); i += 2; step(i); continue;
@@ -485,7 +515,10 @@ function convertWordWithDict(ws: i32, we: i32, isNew: bool): void {
   const vo = dictPtr + (<usize>di(DV_OFF, hit) << 1);
   const vl = di(DV_LEN, hit);
   const allCaps = letters >= 2 && uppers == letters;
-  for (let k = 0; k < vl; k++) {
+  // a final ь goes when a suffix follows (июль, июлдаги)
+  const last = <i32>load<u16>(vo + (<usize>(vl - 1) << 1));
+  const vn = last == 0x44C && consumed < wordLen && isLat(at(ws + consumed)) ? vl - 1 : vl;
+  for (let k = 0; k < vn; k++) {
     const v = <i32>load<u16>(vo + (<usize>k << 1));
     put(allCaps || (firstUpper && k == 0) ? upperChar(v) : v);
   }

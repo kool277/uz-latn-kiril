@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Shared conformance corpus. EVERY port (JS, Python, VBA, LibreOffice Basic, Kotlin, Swift, C++/Qt) must pass all 'cases', 'roundtrips' and 'detect' entries with default options. 'optional' entries test features that only some ports implement.",
   "apostrophes": { "okina": "ʻ", "tutuq": "ʼ" },
   "cases": [
@@ -50,7 +50,7 @@
     { "id": "c2l-45", "from": "cyr", "to": "lat", "in": "Евгений", "out": "Yevgeniy" },
     { "id": "c2l-46", "from": "cyr", "to": "lat", "in": "Е. Юсупов", "out": "Ye. Yusupov" },
     { "id": "c2l-47", "from": "cyr", "to": "lat", "in": "ўқитувчи", "out": "oʻqituvchi" },
-    { "id": "c2l-48", "from": "cyr", "to": "lat", "in": "2026-йил 21-октябрда қонун имзоланди.", "out": "2026-yil 21-oktyabrda qonun imzolandi." },
+    { "id": "c2l-48", "from": "cyr", "to": "lat", "in": "2026-йил 21-октябрда қонун имзоланди.", "out": "2026-yil 21-oktabrda qonun imzolandi.", "note": "the Latin spelling of the month is oktabr" },
     { "id": "c2l-49", "from": "cyr", "to": "lat", "in": "Қирғизистон", "out": "Qirgʻiziston" },
     { "id": "c2l-50", "from": "cyr", "to": "lat", "in": "ҚЎҚОН", "out": "QOʻQON" },
     { "id": "c2l-51", "from": "cyr", "to": "lat", "in": "борщ", "out": "borsh" },
@@ -60,6 +60,12 @@
     { "id": "c2l-55", "from": "cyr", "to": "lat", "in": "Навоий", "out": "Navoiy" },
     { "id": "c2l-56", "from": "cyr", "to": "lat", "in": "Янги Ўзбекистон", "out": "Yangi Oʻzbekiston" },
     { "id": "c2l-57", "from": "cyr", "to": "lat", "in": "Тараққиёт", "out": "Taraqqiyot" },
+    { "id": "c2l-58", "from": "cyr", "to": "lat", "in": "сентябрь", "out": "sentabr", "note": "sentabr, oktabr: the official Latin spelling" },
+    { "id": "c2l-59", "from": "cyr", "to": "lat", "in": "1-Октябрь — Ўқитувчилар куни", "out": "1-Oktabr — Oʻqituvchilar kuni" },
+    { "id": "c2l-60", "from": "cyr", "to": "lat", "in": "СЕНТЯБРДА", "out": "SENTABRDA" },
+    { "id": "c2l-61", "from": "cyr", "to": "lat", "in": "октябрист", "out": "oktabrist" },
+    { "id": "c2l-62", "from": "cyr", "to": "lat", "in": "батальон", "out": "batalyon", "note": "ь before о → y" },
+    { "id": "c2l-63", "from": "cyr", "to": "lat", "in": "БУЛЬОН", "out": "BULYON" },
 
     { "id": "c2n-01", "from": "cyr", "to": "new", "in": "Ўзбекистон", "out": "Özbekiston" },
     { "id": "c2n-02", "from": "cyr", "to": "new", "in": "Тошкент шаҳри", "out": "Toşkent şahri" },
@@ -78,6 +84,8 @@
     { "id": "c2n-15", "from": "cyr", "to": "new", "in": "конституция", "out": "konstitutsiya" },
     { "id": "c2n-16", "from": "cyr", "to": "new", "in": "Чиройли", "out": "Çiroyli" },
     { "id": "c2n-17", "from": "cyr", "to": "new", "in": "мўъжиза", "out": "möjiza" },
+    { "id": "c2n-18", "from": "cyr", "to": "new", "in": "15-сентябрда", "out": "15-sentabrda" },
+    { "id": "c2n-19", "from": "cyr", "to": "new", "in": "медальон", "out": "medalyon" },
 
     { "id": "l2c-01", "from": "lat", "to": "cyr", "in": "Oʻzbekiston Respublikasi", "out": "Ўзбекистон Республикаси" },
     { "id": "l2c-02", "from": "lat", "to": "cyr", "in": "O'zbekiston", "out": "Ўзбекистон", "note": "ASCII apostrophe accepted" },
@@ -155,6 +163,17 @@
     { "id": "l2c-74", "from": "lat", "to": "cyr", "in": "U yotadi", "out": "У ётади", "note": "not the dictionary's old yota (йота)" },
     { "id": "l2c-75", "from": "lat", "to": "cyr", "in": "sirka va sirk", "out": "сирка ва цирк", "note": "dictionary: sirka is its own key, so sirk does not catch it" },
     { "id": "l2c-76", "from": "lat", "to": "cyr", "in": "sinkopa, sinkretizm, sink", "out": "синкопа, синкретизм, цинк", "note": "dictionary: longest key wins" },
+    { "id": "l2c-77", "from": "lat", "to": "cyr", "in": "yanvar, fevral, aprel, iyun, iyul, sentabr, oktabr, noyabr, dekabr", "out": "январь, февраль, апрель, июнь, июль, сентябрь, октябрь, ноябрь, декабрь", "note": "dictionary: months keep ь" },
+    { "id": "l2c-78", "from": "lat", "to": "cyr", "in": "1-yanvardan 15-iyuldagi", "out": "1-январдан 15-июлдаги", "note": "dictionary: a final ь goes before a suffix" },
+    { "id": "l2c-79", "from": "lat", "to": "cyr", "in": "Sentyabr, OKTABR", "out": "Сентябрь, ОКТЯБРЬ" },
+    { "id": "l2c-80", "from": "lat", "to": "cyr", "in": "albom va filmlar", "out": "альбом ва фильмлар", "note": "dictionary: a ь inside the stem stays" },
+    { "id": "l2c-81", "from": "lat", "to": "cyr", "in": "avtomobil, avtomobillar", "out": "автомобиль, автомобиллар" },
+    { "id": "l2c-82", "from": "lat", "to": "cyr", "in": "rol, roli, rolik", "out": "роль, роли, ролик" },
+    { "id": "l2c-83", "from": "lat", "to": "cyr", "in": "moʻjiza, Moʻtabar", "out": "мўъжиза, Мўътабар", "note": "dictionary: ўъ" },
+    { "id": "l2c-84", "from": "lat", "to": "cyr", "in": "tsirk, Tsoy", "out": "цирк, Цой", "note": "word-initial ts → ц" },
+    { "id": "l2c-85", "from": "lat", "to": "cyr", "in": "oʻtsa, o'tsa", "out": "ўтса, ўтса", "note": "ts after the okina is not word-initial" },
+    { "id": "l2c-86", "from": "lat", "to": "cyr", "in": "stansiya, Fransiya, Shveytsariya", "out": "станция, Франция, Швейцария", "note": "dictionary" },
+    { "id": "l2c-87", "from": "lat", "to": "cyr", "in": "rayon, mayor, pavilyon", "out": "район, майор, павильон", "note": "dictionary" },
 
     { "id": "n2c-01", "from": "new", "to": "cyr", "in": "Özbekiston", "out": "Ўзбекистон" },
     { "id": "n2c-02", "from": "new", "to": "cyr", "in": "Ğalaba", "out": "Ғалаба" },
@@ -168,6 +187,7 @@
     { "id": "n2c-10", "from": "new", "to": "cyr", "in": "Yozuvçi", "out": "Ёзувчи" },
     { "id": "n2c-11", "from": "new", "to": "cyr", "in": "Ōzbekiston", "out": "Ўзбекистон", "note": "2021-draft macron accepted" },
     { "id": "n2c-12", "from": "new", "to": "cyr", "in": "O'zbekiston", "out": "Ўзбекистон", "note": "legacy oʻ still accepted in new mode" },
+    { "id": "n2c-13", "from": "new", "to": "cyr", "in": "möjiza, 1-sentabr, tsirk", "out": "мўъжиза, 1-сентябрь, цирк" },
 
     { "id": "l2n-01", "from": "lat", "to": "new", "in": "Oʻzbekiston", "out": "Özbekiston" },
     { "id": "l2n-02", "from": "lat", "to": "new", "in": "O'zbekiston", "out": "Özbekiston" },
@@ -213,7 +233,9 @@
     { "id": "rt-05", "from": "cyr", "via": "lat", "in": "Ўзбекистон Республикаси мустақил давлатдир." },
     { "id": "rt-06", "from": "cyr", "via": "new", "in": "Тошкент шаҳри, Юнусобод тумани, Амир Темур кўчаси." },
     { "id": "rt-07", "from": "lat", "via": "cyr", "in": "Sheʼr, maʼno, eʼlon, sunʼiy, Isʼhoq." },
-    { "id": "rt-08", "from": "new", "via": "cyr", "in": "Şeʼr, maʼno, eʼlon, sunʼiy, Ishoq, Ğalaba, Özbekiston." }
+    { "id": "rt-08", "from": "new", "via": "cyr", "in": "Şeʼr, maʼno, eʼlon, sunʼiy, Ishoq, Ğalaba, Özbekiston." },
+    { "id": "rt-09", "from": "lat", "via": "cyr", "in": "2026-yil 21-oktabrda albom, film va avtomobil haqida moʻjiza boʻldi." },
+    { "id": "rt-10", "from": "cyr", "via": "lat", "in": "1-сентябрь куни батальон 15-июлдаги автомобиль билан келди." }
   ],
   "detect": [
     { "in": "Salom dunyo", "expect": "lat" },

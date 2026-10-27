@@ -73,7 +73,7 @@ public struct Options: Sendable, Hashable {
 
 /// The public API of SPEC §2.
 public enum UzTranslit {
-    public static let version = "1.0.0"
+    public static let version = "1.1.0"
     /// ʻ U+02BB, the okina of Oʻ Gʻ.
     public static let okina = "\u{2BB}"
     /// ʼ U+02BC, the tutuq belgisi.

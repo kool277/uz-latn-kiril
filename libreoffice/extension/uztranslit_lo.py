@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-uztranslit v1.0.0 — Uzbek script converter (Python port of spec/SPEC.md)
+uztranslit v1.1.0 — Uzbek script converter (Python port of spec/SPEC.md)
 Cyrillic (1940) <-> Latin 1995 <-> Latin 2026 (O'RQ-1184: Oʻ→Ö, Gʻ→Ğ, Sh→Ş, Ch→Ç)
 
     from uztranslit import convert, detect
@@ -14,7 +14,7 @@ Zero dependencies; Python 3.6+ (also runs inside LibreOffice's bundled Python). 
 import re
 import sys
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 OKINA = "ʻ"   # ʻ  in Oʻ Gʻ
 TUTUQ = "ʼ"   # ʼ  tutuq belgisi
 
@@ -115,7 +115,23 @@ _DICT_SRC = (
     "proporsiya пропорция|porsiya порция|konferensiya конференция|litsenziya лицензия|litsey лицей|ofitser офицер|"
     "protsent процент|protsess процесс|protsedura процедура|konsert концерт|konsepsiya концепция|konsentratsiya концентрация|"
     "konsern концерн|potensial потенциал|differensial дифференциал|sotsial социал|sotsiologiya социология|spetsial специал|spetsifik специфик|"
-    "kvarts кварц|shprits шприц|plats плац|blits блиц"
+    "kvarts кварц|shprits шприц|plats плац|blits блиц|"
+    "stansiya станция|instansiya инстанция|distansiya дистанция|kvitansiya квитанция|korrupsiya коррупция|"
+    "inspeksiya инспекция|direksiya дирекция|instruksiya инструкция|rekonstruksiya реконструкция|"
+    "korreksiya коррекция|induksiya индукция|tranzaksiya транзакция|funksional функционал|aksent акцент|"
+    "aksiz акциз|auksion аукцион|fransiya франция|fransuz француз|shveytsariya швейцария|yanvar январь|"
+    "fevral февраль|aprel апрель|iyun июнь|iyul июль|sentabr сентябрь|sentyabr сентябрь|oktabr октябрь|"
+    "oktyabr октябрь|noyabr ноябрь|dekabr декабрь|albom альбом|palto пальто|film фильм|rol роль|"
+    "avtomobil автомобиль|spektakl спектакль|medal медаль|model модель|mebel мебель|portfel портфель|"
+    "stil стиль|tekstil текстиль|rubl рубль|dizel дизель|kalendar календарь|slovar словарь|bukvar букварь|"
+    "sekretar секретарь|ansambl ансамбль|parallel параллель|festival фестиваль|pedal педаль|detal деталь|"
+    "panel панель|kabel кабель|otel отель|motel мотель|shinel шинель|kafel кафель|tabel табель|"
+    "shtempel штемпель|vertikal вертикаль|gorizontal горизонталь|diagonal диагональ|magistral магистраль|"
+    "spiral спираль|gospital госпиталь|dvigatel двигатель|asfalt асфальт|vals вальс|volt вольт|pult пульт|"
+    "kult культ|tyulpan тюльпан|shampun шампунь|kreml кремль|alpinist альпинист|alpinizm альпинизм|"
+    "konsult консульт|rezultat результат|fakultet факультет|fakultativ факультатив|kalkulyator калькулятор|"
+    "kalkulyatsiya калькуляция|pavilyon павильон|pochtalyon почтальон|kompanyon компаньон|rayon район|"
+    "mayor майор|mayonez майонез|mo'jiza мўъжиза|mo'tabar мўътабар|mo'tadil мўътадил|mo'jaz мўъжаз"
 )
 DICT = {}
 for _p in _DICT_SRC.split("|"):
@@ -177,7 +193,9 @@ def _cyr_to_latin(text, target, o):
             else:
                 r = o["tutuq"]
         elif L == "ь":
-            r = ""
+            r = "y" if cyr_lower(N) == "о" else ""  # батальон -> batalyon
+        elif L == "я":
+            r = "a" if _month_ta(text, i) else "ya"  # сентябрь -> sentabr
         elif L in "шщ":
             r = "ş" if is_new else "sh"
         elif L == "ч":
@@ -192,6 +210,17 @@ def _cyr_to_latin(text, target, o):
             r = C2L.get(L, c)
         out.append(_case_out(text, i, up, r))
     return "".join(out)
+
+
+def _month_ta(text, i):
+    """The я of сентябр… / октябр…: the Latin spelling of these months is sentabr, oktabr."""
+    start = i
+    while start > 0 and is_letter(text[start - 1]):
+        start -= 1
+    stem = "сентябр" if i - start == 4 else "октябр" if i - start == 3 else ""
+    if not stem or start + len(stem) > len(text):
+        return False
+    return all(cyr_lower(text[start + k]) == stem[k] for k in range(len(stem)))
 
 
 # ----------------------------------------------------------------- Latin -> Cyrillic
@@ -263,6 +292,8 @@ def _latin_to_cyr_scan(text, source, o, prev_ctx=""):
                 out.append("Е" if up else "е")
             i += 1; continue
         if L == "t" and NL == "s":
+            if not prev_is_letter and not (i > 0 and is_apos(text[i - 1])):
+                out.append("Ц" if up else "ц"); i += 2; continue
             rest = text[i + 2:i + 5].lower()
             if rest.startswith("iya") or rest.startswith("ion"):
                 out.append("Ц" if up else "ц"); i += 2; continue
@@ -301,6 +332,9 @@ def _convert_word_with_dict(word, source, o):
         cyr_stem = upper_first(value)
     else:
         cyr_stem = value
+    # a final ь goes when a suffix follows (июль, июлдаги)
+    if cyr_lower(cyr_stem[-1:]) == "ь" and is_lat(rest[:1]):
+        cyr_stem = cyr_stem[:-1]
     return cyr_stem + _latin_to_cyr_scan(rest, source, o, stem_src[-1] if stem_src else "")
 
 

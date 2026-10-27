@@ -15,7 +15,7 @@ package uz.jaybi.uztranslit.core
  * The object is immutable after initialisation and safe to use from any thread.
  */
 public object UzTranslit {
-    public const val VERSION: String = "1.0.0"
+    public const val VERSION: String = "1.1.0"
 
     /** ʻ (U+02BB), the mark in Oʻ and Gʻ (output of `lat`). */
     public const val OKINA: String = "\u02BB"
@@ -131,6 +131,9 @@ public object UzTranslit {
     private const val CY_H = '\u04B3' // ҳ
     private const val CY_Y = '\u0439' // й
     private const val CY_E_REV = '\u044D' // э
+    private const val CY_O = '\u043E' // о
+    private const val SENTYABR = "\u0441\u0435\u043D\u0442\u044F\u0431\u0440" // сентябр
+    private const val OKTYABR = "\u043E\u043A\u0442\u044F\u0431\u0440" // октябр
     private const val LA_O_UML = '\u00F6' // ö
     private const val LA_G_BREVE = '\u011F' // ğ
     private const val LA_S_CEDILLA = '\u015F' // ş
@@ -296,7 +299,8 @@ public object UzTranslit {
                         else -> o.tutuq
                     }
                 }
-                CY_SOFT -> "" // компьютер → kompyuter, альбом → albom
+                CY_SOFT -> if (cyrLower(nx) == CY_O) "y" else "" // батальон → batalyon; компьютер → kompyuter
+                CY_YA -> if (monthTa(text, i)) "a" else "ya" // сентябрь → sentabr
                 CY_SH, CY_SHCH -> if (isNew) "\u015F" else "sh" // ş
                 CY_CH -> if (isNew) "\u00E7" else "ch" // ç
                 CY_U_SHORT -> if (isNew) "\u00F6" else oOkina // ö
@@ -306,6 +310,20 @@ public object UzTranslit {
             }
             out.append(caseOut(text, i, up, r))
         }
+    }
+
+    /** The я of сентябр… / октябр…: the Latin spelling of these months is sentabr, oktabr. */
+    private fun monthTa(text: String, i: Int): Boolean {
+        var start = i
+        while (start > 0 && isLetter(text[start - 1])) start--
+        val stem = when (i - start) {
+            4 -> SENTYABR
+            3 -> OKTYABR
+            else -> return false
+        }
+        if (start + stem.length > text.length) return false
+        for (k in stem.indices) if (cyrLower(text[start + k]) != stem[k]) return false
+        return true
     }
 
     // ------------------------------------------------------------------ Latin → Cyrillic (SPEC §5.2)
@@ -394,6 +412,11 @@ public object UzTranslit {
                 continue
             }
             if (l == 't' && nl == 's') {
+                if (!prevIsLetter && !(i > 0 && isApos(text[i - 1]))) { // tsirk, Tsoy; oʻtsa keeps т+с
+                    out.cyr(CY_TS, up)
+                    i += 2
+                    continue
+                }
                 // reference: text.substr(i + 2, 3).toLowerCase() starts with "iya" or "ion"
                 val r0 = asciiLower(charAt(text, i + 2))
                 val r1 = asciiLower(charAt(text, i + 3))
@@ -495,13 +518,14 @@ public object UzTranslit {
             }
         }
         val value = UzDictionary[hit]!!
-        out.append(
-            when {
-                letters >= 2 && uppers == letters -> upperStr(value)
-                firstUpper -> upperFirst(value)
-                else -> value
-            },
-        )
+        var stem = when {
+            letters >= 2 && uppers == letters -> upperStr(value)
+            firstUpper -> upperFirst(value)
+            else -> value
+        }
+        // a final ь goes when a suffix follows (июль, июлдаги)
+        if (cyrLower(stem.last()) == CY_SOFT && consumed < word.length && isLat(word[consumed])) stem = stem.dropLast(1)
+        out.append(stem)
         latinToCyrScan(word.substring(consumed), source, o, word[consumed - 1], out)
     }
 

@@ -9,20 +9,20 @@ All six directions, with the rules that matter: е/э, ц → s/ts, ъ/ь, йў 
 
 | Part | Path | Status |
 |---|---|---|
-| Specification + 216-check conformance corpus | `spec/` | source of truth |
-| JavaScript core (browser/Node, UMD) | `core/js/uztranslit.js` | 216/216 ✔ |
-| Python core + CLI | `core/python/uztranslit.py` | 216/216 ✔ |
-| WebAssembly core (AssemblyScript) + the same engine as plain JS (wasm2js) | `core/wasm/` | 216/216 ✔ both builds; identical to the JS core on 40,000 random conversions per build in CI (1.2M checked once) |
-| Web app for **https://latin.jaybi.uz** — Angular 22, WebAssembly on every CPU core, text **and documents**, PWA/offline | `web/` | 216/216 ✔ both engines · 507 engine tests · 19 Playwright tests |
+| Specification + 238-check conformance corpus | `spec/` | source of truth |
+| JavaScript core (browser/Node, UMD) | `core/js/uztranslit.js` | 238/238 ✔ |
+| Python core + CLI | `core/python/uztranslit.py` | 238/238 ✔ |
+| WebAssembly core (AssemblyScript) + the same engine as plain JS (wasm2js) | `core/wasm/` | 238/238 ✔ both builds; identical to the JS core on 40,000 random conversions per build in CI (1.2M checked once) |
+| Web app for **https://latin.jaybi.uz** — Angular 22, WebAssembly on every CPU core, text **and documents**, PWA/offline | `web/` | 238/238 ✔ both engines · 551 engine tests · 19 Playwright tests |
 | MS Office macro module (Word/Excel/PowerPoint 97 → 2026, VBA 5–7) | `office-vba/UzTranslit.bas` | engine executed in LibreOffice Basic VBA mode: 214/214 ✔, 3,500 differential ✔; document macros compiled + linted (Office itself not in CI) |
-| Desktop (Qt 6): Windows installer, macOS dmg, Linux AppImage — editor with live conversion, text/Markdown/SRT/HTML/XML files, folder batch, tray clipboard actions, `uztranslit` CLI | `platforms/qt-desktop/` | C++ core 216/216 ✔, 22,000 differential ✔, 7 ctest suites (CLI, GUI offscreen, documents, translations); packages built in CI, unsigned |
+| Desktop (Qt 6): Windows installer, macOS dmg, Linux AppImage — editor with live conversion, text/Markdown/SRT/HTML/XML files, folder batch, tray clipboard actions, `uztranslit` CLI | `platforms/qt-desktop/` | C++ core 238/238 ✔, 22,000 differential ✔, 7 ctest suites (CLI, GUI offscreen, documents, translations); packages built in CI, unsigned |
 | Office ribbon tab (2007+): `UzTranslitRibbon.bas` + `office-vba/ribbon/`, put into a .dotm/.xlam/.ppam by `tools/add_ribbon.py` | `office-vba/ribbon/` | injection tested on Word/Excel/PowerPoint files; `UzSelfTest` 29/29 in CI |
 | Office installer for Windows: `UzTranslit-<version>-Office-Setup.exe` (PyInstaller) builds `UzTranslit.dotm` / `UzTranslit.xlam` with Word and Excel through COM, adds the ribbon, puts them into STARTUP / XLSTART | `platforms/office-installer/` | 28 checks against fake Word/Excel; exe built and started on Windows in CI (no Office in CI) |
 | Office add-in (Office.js) for Word, Excel, PowerPoint on the web, Mac, iPad and Microsoft 365, served at latin.jaybi.uz/office | `platforms/office-addin/` | manifests valid (Microsoft validator); logic tested against fake hosts + the 20,000-case corpus; task pane tested in Chromium |
 | LibreOffice extension (menu Tools ▸ UzTranslit) | `libreoffice/uztranslit-libreoffice.oxt` | installed + e2e-tested in Writer/Calc/Impress ✔ |
 | LibreOffice Basic module / Python edition | `libreoffice/UzTranslitLO.bas`, `uztranslit-libreoffice-python.oxt` | ✔ / needs Python provider |
-| Android 7+ — Kotlin core + Compose app: live converter, *Process text* menu on selected text, share sheet, .txt files, Quick Settings tile | `platforms/android/` | Kotlin core 216/216 ✔, 20,000 differential ✔, 264 JVM tests; signed release APK + bundle built in CI and started on an emulator |
-| iOS / iPadOS / macOS — Swift package `UzTranslitCore`, SwiftUI app with Share and Action extensions, macOS app with a Services menu item | `platforms/ios/` | Swift core 216/216 ✔, 20,000 differential ✔ (Linux, CI); apps built unsigned on macOS in CI — signing/TestFlight need your Apple team (`platforms/ios/README.md`) |
+| Android 7+ — Kotlin core + Compose app: live converter, *Process text* menu on selected text, share sheet, .txt files, Quick Settings tile | `platforms/android/` | Kotlin core 238/238 ✔, 20,000 differential ✔, 290 JVM tests; signed release APK + bundle built in CI and started on an emulator |
+| iOS / iPadOS / macOS — Swift package `UzTranslitCore`, SwiftUI app with Share and Action extensions, macOS app with a Services menu item | `platforms/ios/` | Swift core 238/238 ✔, 20,000 differential ✔ (Linux, CI); apps built unsigned on macOS in CI — signing/TestFlight need your Apple team (`platforms/ios/README.md`) |
 | Claude Code master prompt (Android, iOS, Qt 6, Office.js add-in, CI, releases) | `CLAUDE_CODE_PROMPT.md` + `CLAUDE.md` | run it |
 
 ## Downloads
@@ -35,8 +35,8 @@ macros and ribbon kit, Office add-in manifest, LibreOffice extensions and the we
 ## Quick start
 
 ```bash
-node core/js/test.js                              # 216 passed
-python3 core/python/test_uztranslit.py            # 216 passed
+node core/js/test.js                              # 238 passed
+python3 core/python/test_uztranslit.py            # 238 passed
 echo "O'zbekiston Respublikasi" | python3 core/python/uztranslit.py --to new      # Özbekiston Respublikasi
 echo "Toshkent shahri" | python3 core/python/uztranslit.py --to cyr              # Тошкент шаҳри
 ```
@@ -96,9 +96,12 @@ claude          # from the repository root
 
 ## Rules worth knowing (see `spec/SPEC.md`)
 
-* Cyrillic е → `ye` at word start / after a vowel / after ъ ь, else `e`; ц → `ts` after a vowel, else `s`; ъ → ʼ (dropped before е ё ю я and after ў); ь dropped.
+* Cyrillic е → `ye` at word start / after a vowel / after ъ ь, else `e`; ц → `ts` after a vowel, else `s`; ъ → ʼ (dropped before е ё ю я and after ў); ь dropped, but ьо → `yo` (батальон → batalyon); сентябрь, октябрь → `sentabr`, `oktabr`.
 * 1995 Latin `sʼh` (Isʼhoq) becomes plain `sh` in 2026 Latin (Ishoq) because Ş makes it unambiguous; the reverse inserts ʼ again.
 * `yoʻl` → йўл, `tayyor` → тайёр, `oʻtsa` stays ўтса while `militsiya` → милиция, `abzats` → абзац.
+* Latin → Cyrillic writes the Cyrillic spelling back: word-initial `ts` → ц (`tsirk` → цирк), and the loanword dictionary
+  restores ц, ь and ъ (`albom` → альбом, `iyul` → июль, `moʻjiza` → мўъжиза); a final ь goes before a suffix as in Cyrillic
+  texts (`iyuldagi` → июлдаги, `avtomobillar` → автомобиллар).
 * Casing: ШАҲАР → SHAHAR, Шаҳар → Shahar, Ş alone → Sh.
 * The 2026 *imlo qoidalari* are not published yet; the few open points (ўъ, `ng`) are options, documented in SPEC §7.
 

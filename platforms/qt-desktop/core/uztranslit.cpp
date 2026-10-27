@@ -187,7 +187,23 @@ constexpr std::u16string_view DICT_SRC =
     u"proporsiya пропорция|porsiya порция|konferensiya конференция|litsenziya лицензия|litsey лицей|ofitser офицер|"
     u"protsent процент|protsess процесс|protsedura процедура|konsert концерт|konsepsiya концепция|konsentratsiya концентрация|"
     u"konsern концерн|potensial потенциал|differensial дифференциал|sotsial социал|sotsiologiya социология|spetsial специал|spetsifik специфик|"
-    u"kvarts кварц|shprits шприц|plats плац|blits блиц";
+    u"kvarts кварц|shprits шприц|plats плац|blits блиц|"
+    u"stansiya станция|instansiya инстанция|distansiya дистанция|kvitansiya квитанция|korrupsiya коррупция|"
+    u"inspeksiya инспекция|direksiya дирекция|instruksiya инструкция|rekonstruksiya реконструкция|"
+    u"korreksiya коррекция|induksiya индукция|tranzaksiya транзакция|funksional функционал|aksent акцент|"
+    u"aksiz акциз|auksion аукцион|fransiya франция|fransuz француз|shveytsariya швейцария|yanvar январь|"
+    u"fevral февраль|aprel апрель|iyun июнь|iyul июль|sentabr сентябрь|sentyabr сентябрь|oktabr октябрь|"
+    u"oktyabr октябрь|noyabr ноябрь|dekabr декабрь|albom альбом|palto пальто|film фильм|rol роль|"
+    u"avtomobil автомобиль|spektakl спектакль|medal медаль|model модель|mebel мебель|portfel портфель|"
+    u"stil стиль|tekstil текстиль|rubl рубль|dizel дизель|kalendar календарь|slovar словарь|bukvar букварь|"
+    u"sekretar секретарь|ansambl ансамбль|parallel параллель|festival фестиваль|pedal педаль|detal деталь|"
+    u"panel панель|kabel кабель|otel отель|motel мотель|shinel шинель|kafel кафель|tabel табель|"
+    u"shtempel штемпель|vertikal вертикаль|gorizontal горизонталь|diagonal диагональ|magistral магистраль|"
+    u"spiral спираль|gospital госпиталь|dvigatel двигатель|asfalt асфальт|vals вальс|volt вольт|pult пульт|"
+    u"kult культ|tyulpan тюльпан|shampun шампунь|kreml кремль|alpinist альпинист|alpinizm альпинизм|"
+    u"konsult консульт|rezultat результат|fakultet факультет|fakultativ факультатив|kalkulyator калькулятор|"
+    u"kalkulyatsiya калькуляция|pavilyon павильон|pochtalyon почтальон|kompanyon компаньон|rayon район|"
+    u"mayor майор|mayonez майонез|mo'jiza мўъжиза|mo'tabar мўътабар|mo'tadil мўътадил|mo'jaz мўъжаз";
 
 struct DictEntry
 {
@@ -383,6 +399,24 @@ void caseOut(QStringView text, qsizetype i, bool srcUpper, QStringView out, QStr
 }
 
 // ---------------------------------------------------------------- Cyrillic → Latin (SPEC §5.1)
+namespace {
+// the я of сентябр… / октябр…: the Latin spelling of these months is sentabr, oktabr
+bool monthTa(QStringView text, qsizetype i)
+{
+    qsizetype start = i;
+    while (start > 0 && isLetter(text[start - 1]))
+        --start;
+    const std::u16string_view stem = i - start == 4 ? u"сентябр" : i - start == 3 ? u"октябр" : u"";
+    if (stem.empty() || start + qsizetype(stem.size()) > text.size())
+        return false;
+    for (std::size_t k = 0; k < stem.size(); ++k) {
+        if (cyrLower(text[start + qsizetype(k)]).unicode() != stem[k])
+            return false;
+    }
+    return true;
+}
+} // namespace
+
 QString cyrToLatin(QStringView text, Script target, const Options &o)
 {
     const bool isNew = target == Script::New;
@@ -422,8 +456,11 @@ QString cyrToLatin(QStringView text, Script target, const Options &o)
                 r = o.tutuq;
             break;
         }
-        case u'ь':
-            r = QStringView(u"");
+        case u'ь': // батальон → batalyon
+            r = cyrLower(N) == u'о' ? QStringView(u"y") : QStringView(u"");
+            break;
+        case u'я': // сентябрь → sentabr
+            r = monthTa(text, i) ? QStringView(u"a") : QStringView(u"ya");
             break;
         case u'ш':
         case u'щ':
@@ -524,6 +561,11 @@ QString latinToCyrScan(QStringView text, Script source, const Options &o, QChar 
             continue;
         }
         if (L == u't' && NL == u's') {
+            if (!prevIsLetter && !(i > 0 && isApos(text[i - 1]))) { // tsirk, Tsoy; oʻtsa keeps т+с
+                put(u'ц', u'Ц');
+                i += 2;
+                continue;
+            }
             const char16_t r0 = asciiLower(charAt(text, i + 2));
             const char16_t r1 = asciiLower(charAt(text, i + 3));
             const char16_t r2 = asciiLower(charAt(text, i + 4));
@@ -610,6 +652,9 @@ QString convertWordWithDict(QStringView word, Script source, const Options &o)
         cyrStem = upperFirst(hit->value);
     else
         cyrStem = hit->value;
+    // a final ь goes when a suffix follows (июль, июлдаги)
+    if (!rest.isEmpty() && isLat(rest.front()) && cyrLower(cyrStem.back()) == u'ь')
+        cyrStem.chop(1);
     return cyrStem + latinToCyrScan(rest, source, o, stemSrc.back());
 }
 

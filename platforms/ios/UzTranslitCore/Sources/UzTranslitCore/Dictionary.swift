@@ -13,7 +13,23 @@ let DICT_SRC = "obyekt объект|subyekt субъект|adyutant адъюта
     "proporsiya пропорция|porsiya порция|konferensiya конференция|litsenziya лицензия|litsey лицей|ofitser офицер|" +
     "protsent процент|protsess процесс|protsedura процедура|konsert концерт|konsepsiya концепция|konsentratsiya концентрация|" +
     "konsern концерн|potensial потенциал|differensial дифференциал|sotsial социал|sotsiologiya социология|spetsial специал|spetsifik специфик|" +
-    "kvarts кварц|shprits шприц|plats плац|blits блиц"
+    "kvarts кварц|shprits шприц|plats плац|blits блиц|" +
+    "stansiya станция|instansiya инстанция|distansiya дистанция|kvitansiya квитанция|korrupsiya коррупция|" +
+    "inspeksiya инспекция|direksiya дирекция|instruksiya инструкция|rekonstruksiya реконструкция|" +
+    "korreksiya коррекция|induksiya индукция|tranzaksiya транзакция|funksional функционал|aksent акцент|" +
+    "aksiz акциз|auksion аукцион|fransiya франция|fransuz француз|shveytsariya швейцария|yanvar январь|" +
+    "fevral февраль|aprel апрель|iyun июнь|iyul июль|sentabr сентябрь|sentyabr сентябрь|oktabr октябрь|" +
+    "oktyabr октябрь|noyabr ноябрь|dekabr декабрь|albom альбом|palto пальто|film фильм|rol роль|" +
+    "avtomobil автомобиль|spektakl спектакль|medal медаль|model модель|mebel мебель|portfel портфель|" +
+    "stil стиль|tekstil текстиль|rubl рубль|dizel дизель|kalendar календарь|slovar словарь|bukvar букварь|" +
+    "sekretar секретарь|ansambl ансамбль|parallel параллель|festival фестиваль|pedal педаль|detal деталь|" +
+    "panel панель|kabel кабель|otel отель|motel мотель|shinel шинель|kafel кафель|tabel табель|" +
+    "shtempel штемпель|vertikal вертикаль|gorizontal горизонталь|diagonal диагональ|magistral магистраль|" +
+    "spiral спираль|gospital госпиталь|dvigatel двигатель|asfalt асфальт|vals вальс|volt вольт|pult пульт|" +
+    "kult культ|tyulpan тюльпан|shampun шампунь|kreml кремль|alpinist альпинист|alpinizm альпинизм|" +
+    "konsult консульт|rezultat результат|fakultet факультет|fakultativ факультатив|kalkulyator калькулятор|" +
+    "kalkulyatsiya калькуляция|pavilyon павильон|pochtalyon почтальон|kompanyon компаньон|rayon район|" +
+    "mayor майор|mayonez майонез|mo'jiza мўъжиза|mo'tabar мўътабар|mo'tadil мўътадил|mo'jaz мўъжаз"
 
 struct DictEntry: Sendable {
     let key: [UInt16]

@@ -14,6 +14,26 @@ private let A_C_CEDILLA: [UInt16] = [0xE7] // ç
 private let A_O_DIAERESIS: [UInt16] = [0xF6] // ö
 private let A_G_BREVE: [UInt16] = [0x11F] // ğ
 private let A_EMPTY: [UInt16] = []
+private let A_Y: [UInt16] = [0x79] // y
+private let A_A: [UInt16] = [0x61] // a
+private let A_YA: [UInt16] = [0x79, 0x61] // ya
+private let SENTYABR: [Int] = [0x441, 0x435, 0x43D, 0x442, 0x44F, 0x431, 0x440] // сентябр
+private let OKTYABR: [Int] = [0x43E, 0x43A, 0x442, 0x44F, 0x431, 0x440] // октябр
+
+/// The я of сентябр… / октябр…: the Latin spelling of these months is sentabr, oktabr.
+private func monthTa(_ text: [UInt16], _ i: Int) -> Bool {
+    var start = i
+    while start > 0 && isLetter(Int(text[start - 1])) { start -= 1 }
+    let stem: [Int]
+    switch i - start {
+    case 4: stem = SENTYABR
+    case 3: stem = OKTYABR
+    default: return false
+    }
+    if start + stem.count > text.count { return false }
+    for k in 0..<stem.count where cyrLower(Int(text[start + k])) != stem[k] { return false }
+    return true
+}
 
 /// SPEC §5.1 simple table: lowercase Cyrillic → Latin, indexed by code unit - 0x400.
 private let C2L: [[UInt16]] = {
@@ -85,7 +105,8 @@ struct Engine: Sendable {
                 if nl == 0x435 || nl == 0x451 || nl == 0x44E || nl == 0x44F { r = A_EMPTY } // before е ё ю я
                 else if cyrLower(P) == 0x45E && dropHardSignAfterO { r = A_EMPTY } // ўъ
                 else { r = tutuq }
-            case 0x44C: r = A_EMPTY // ь
+            case 0x44C: r = cyrLower(N) == 0x43E ? A_Y : A_EMPTY // ь (батальон → batalyon)
+            case 0x44F: r = monthTa(text, i) ? A_A : A_YA // я (сентябрь → sentabr)
             case 0x448, 0x449: r = isNew ? A_S_CEDILLA : A_SH // ш щ
             case 0x447: r = isNew ? A_C_CEDILLA : A_CH // ч
             case 0x45E: r = isNew ? A_O_DIAERESIS : oOkina // ў
@@ -150,6 +171,7 @@ struct Engine: Sendable {
                 i += 1; continue
             }
             if L == 0x74 && NL == 0x73 { // ts
+                if !prevIsLetter && !(i > 0 && isApos(Int(text[i - 1]))) { emit(up, 0x426, 0x446); i += 2; continue } // tsirk
                 let r0 = asciiLower(at(text, i + 2)), r1 = asciiLower(at(text, i + 3)), r2 = asciiLower(at(text, i + 4))
                 if r0 == 0x69 && ((r1 == 0x79 && r2 == 0x61) || (r1 == 0x6F && r2 == 0x6E)) { // -tsiya, -tsion
                     emit(up, 0x426, 0x446); i += 2; continue
@@ -204,10 +226,12 @@ struct Engine: Sendable {
                 if letters == 1 { firstUpper = true }
             }
         }
-        let cyrStem: [UInt16]
+        var cyrStem: [UInt16]
         if letters >= 2 && uppers == letters { cyrStem = upperStr(hit.value) }
         else if firstUpper { cyrStem = upperFirst(hit.value) }
         else { cyrStem = hit.value }
+        // a final ь goes when a suffix follows (июль, июлдаги)
+        if let last = cyrStem.last, cyrLower(Int(last)) == 0x44C, let next = rest.first, isLat(Int(next)) { cyrStem.removeLast() }
         let lastSrc = stemSrc.last.map { Int($0) } ?? NONE
         return cyrStem + latinToCyrScan(rest, source, lastSrc)
     }

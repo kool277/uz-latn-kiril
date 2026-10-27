@@ -1,4 +1,4 @@
-# UzTranslit — Uzbek script conversion specification (v1.0.0)
+# UzTranslit — Uzbek script conversion specification (v1.1.0)
 
 Single source of truth for every port (JS, Python, VBA, LibreOffice Basic, Kotlin, Swift, C++/Qt).
 A port is **conformant** when it passes every entry in `fixtures.json` (`cases`, `roundtrips`, `detect`) with default options.
@@ -81,8 +81,10 @@ for each char c at i:
     ъ : if N ∈ {е ё ю я}: out = ""                      # objekt → obyekt
         elif lower(P) == ў and dropHardSignAfterO: out = ""   # мўъжиза → moʻjiza
         else out = tutuq
-    ь : out = ""                                          # компьютер → kompyuter, альбом → albom
-    ё : "yo"   ю : "yu"   я : "ya"
+    ь : out = (lower(N) == о) ? "y" : ""                  # батальон → batalyon; компьютер → kompyuter, альбом → albom
+    ё : "yo"   ю : "yu"
+    я : out = monthTa(text, i) ? "a" : "ya"               # сентябрь → sentabr, октябрь → oktabr
+
     ш : target==new ? "ş" : "sh"      щ : same as ш
     ч : target==new ? "ç" : "ch"
     ў : target==new ? "ö" : "o"+okina
@@ -90,11 +92,15 @@ for each char c at i:
     с : (target==lat and lower(N) == ҳ) ? "s"+tutuq : "s"    # Исҳоқ → Isʼhoq ; new: Ishoq
     else: simple table (а a, б b, в v, г g, д d, ж j, з z, и i, й y, к k, л l, м m, н n, о o, п p, р r, т t, у u, ф f, х x, қ q, ҳ h, э e, ы i)
   append upperOut(c, i, out)
+
+monthTa(text, i):   # the Latin spelling of these two months has a, not ya
+  the word (maximal run of letters) holding i starts with сентябр or октябр (any case) and i is the я in it
 ```
 
 ### 5.2 Latin → Cyrillic (`source` = `lat` or `new`)
 
 Word pre-pass (if `dictionary`): split into maximal runs of `isLat || isApos`; for each run compute `key = normalise(run)` (lowercase; every apostrophe → `'`; ö/ō/õ→`o'`, ğ→`g'`, ş→`sh`, ç→`ch`). Find the **longest** dictionary key that is a prefix of `key`. If found: emit the dictionary value with the run's casing (ALL CAPS if the run has ≥2 letters and all are uppercase; Title if the first letter is uppercase), then convert the remainder of the run with the scanner below, passing the stem's last Latin letter as `prevContext`.
+A value that ends in ь loses that ь when the remainder starts with a letter (a suffix follows), as Cyrillic spelling does: iyul → июль but iyuldagi → июлдаги, rol → роль but roli → роли; a ь inside the stem stays (filmlar → фильмлар).
 
 Scanner:
 ```
@@ -135,6 +141,7 @@ while i < n:
   if L == e: emit (not prevIsLetter or prevIsVowelOrApos) ? э : е     # Ekologiya, poema / Toshkent
   # ts
   if L == t and lower(N) == s:
+     if not prevIsLetter and not (i>0 and isApos(text[i-1])): emit ц; i += 2; continue   # tsirk, Tsoy (no Uzbek word starts with ts; oʻtsa keeps тс)
      rest = lower(text[i+2 : i+5])
      if rest startswith "iya" or "ion": emit ц; i += 2; continue     # militsiya, ratsion
      if tsFinal and (i+2 == n or not isLat(text[i+2])) and i>0 and latVowel(text[i-1]): emit ц; i += 2; continue   # abzats
@@ -172,7 +179,7 @@ Before converting, tokenise with `(https?://|www\.)\S+|\S+@\S+\.\S+|@\w+` and pa
 
 ## 6. Dictionary (Latin → Cyrillic stems, lowercase keys with ASCII `'`)
 
-Russian loans where the rules are lossy. Keys are matched as **prefixes of a word** (so suffixes convert normally: kompyuterlar → компьютерлар). Keep keys that are full base words to avoid false prefixes (never add `sent` — it would hit `sentabr`). The longest
+Russian loans and the ўъ words, where the rules are lossy: the dictionary brings back the Cyrillic spelling (ц, ь, ъ, ё/йо). Keys are matched as **prefixes of a word** (so suffixes convert normally: kompyuterlar → компьютерлар). Keep keys that are full base words to avoid false prefixes (never add `sent` — it would hit `sentabr`). The longest
 matching key wins, so a word that a shorter key would catch wrongly gets a key of its own with its rule spelling
 (`sirka` vinegar, not цирк; `sinkop…`, not цинк). `yod` (ёд, memory: yodgorlik, yodda) and `yota` (yotadi) are
 common Uzbek words, so йод and йота are not in the list. `tools/mine_dictionary.py` finds such cases in a parallel corpus.
@@ -192,13 +199,32 @@ proporsiya пропорция · porsiya порция · konferensiya конфе
 protsent процент · protsess процесс · protsedura процедура · konsert концерт · konsepsiya концепция · konsentratsiya концентрация
 konsern концерн · potensial потенциал · differensial дифференциал · sotsial социал · sotsiologiya социология · spetsial специал · spetsifik специфик
 kvarts кварц · shprits шприц · plats плац · blits блиц
+stansiya станция · instansiya инстанция · distansiya дистанция · kvitansiya квитанция · korrupsiya коррупция · inspeksiya инспекция
+direksiya дирекция · instruksiya инструкция · rekonstruksiya реконструкция · korreksiya коррекция · induksiya индукция
+tranzaksiya транзакция · funksional функционал · aksent акцент · aksiz акциз · auksion аукцион
+fransiya франция · fransuz француз · shveytsariya швейцария
+yanvar январь · fevral февраль · aprel апрель · iyun июнь · iyul июль · sentabr сентябрь · sentyabr сентябрь
+oktabr октябрь · oktyabr октябрь · noyabr ноябрь · dekabr декабрь
+albom альбом · palto пальто · film фильм · rol роль · avtomobil автомобиль · spektakl спектакль · medal медаль · model модель
+mebel мебель · portfel портфель · stil стиль · tekstil текстиль · rubl рубль · dizel дизель · kalendar календарь · slovar словарь
+bukvar букварь · sekretar секретарь · ansambl ансамбль · parallel параллель · festival фестиваль · pedal педаль · detal деталь
+panel панель · kabel кабель · otel отель · motel мотель · shinel шинель · kafel кафель · tabel табель · shtempel штемпель
+vertikal вертикаль · gorizontal горизонталь · diagonal диагональ · magistral магистраль · spiral спираль · gospital госпиталь
+dvigatel двигатель · asfalt асфальт · vals вальс · volt вольт · pult пульт · kult культ · tyulpan тюльпан · shampun шампунь
+kreml кремль · alpinist альпинист · alpinizm альпинизм · konsult консульт · rezultat результат · fakultet факультет
+fakultativ факультатив · kalkulyator калькулятор · kalkulyatsiya калькуляция
+pavilyon павильон · pochtalyon почтальон · kompanyon компаньон · rayon район · mayor майор · mayonez майонез
+mo'jiza мўъжиза · mo'tabar мўътабар · mo'tadil мўътадил · mo'jaz мўъжаз
 ```
 Ports may extend the list; `fixtures.json` only relies on the entries marked "dictionary" in its notes.
 
 ## 7. Known lossy conversions (documented, not bugs)
 
-* Cyrillic ь not before е/ё/ю/я is dropped (альбом → albom → албом).
+* Cyrillic ь not before е/ё/ю/я/о is dropped; it comes back only for dictionary stems (альбом → albom → альбом, but
+  гриль → gril → грил).
 * Cyrillic ъ before iotated vowels is dropped (объект ↔ obyekt needs the dictionary to come back).
 * Cyrillic йо/йу/йа sequences (йод, Майами) become yo/yu/ya and read back as ё/ю/я unless in the dictionary.
-* Cyrillic ц → s/ts needs the dictionary to come back to ц in most words.
+* Cyrillic ц → s/ts needs the dictionary to come back to ц in most words (word-initial ts and ts before iya/ion,
+  and word-final ts after a vowel, are rules).
+* ўъ → oʻ / ö comes back as ўъ only for dictionary stems (мўъжиза).
 * 2026 orthography rules (imlo qoidalari) are not yet published; the treatment of ўъ (möjiza) is configurable.
