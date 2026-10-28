@@ -18,7 +18,7 @@ settings:
   base:
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
-    MARKETING_VERSION: "1.3.0"
+    MARKETING_VERSION: "1.4.0"
     CURRENT_PROJECT_VERSION: "1"
     # the app targets use Swift 5 language mode; the package (swift-tools-version 6.0) builds in Swift 6 mode
     SWIFT_VERSION: "5.0"
