@@ -63,7 +63,9 @@ profile — installing the test library there replaces the user's My Macros ▸ 
 - `services/engine.service.ts` runs one worker per core (max 8) plus one for the text editor; the WASM module is
   compiled once and posted to workers. Large .txt/.csv files are cut at line feeds and converted on all workers.
 - `scripts/sync-core.mjs` (run by prestart/prebuild/pretest) copies the core/wasm builds, `spec/fixtures.json` and
-  the Office/LibreOffice downloads into gitignored folders; never edit `src/generated`, `public/wasm`, `public/downloads`.
+  the Office/LibreOffice downloads into gitignored folders and writes the footer's version from `package.json`
+  (`src/generated/version.ts`: bump `web/package.json` with every release); never edit `src/generated`, `public/wasm`,
+  `public/downloads`.
 - Security: `src/index.html` carries a strict CSP (only 'self', `wasm-unsafe-eval`, Trusted Types); `main.ts`
   installs the only Trusted Types policy (same-origin `.js` script URLs). Never use `innerHTML`/`bypassSecurityTrust*`,
   never load third-party resources; `scripts/csp-hash.mjs` (postbuild) allows Angular's inline import map by hash.

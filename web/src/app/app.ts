@@ -9,6 +9,7 @@ import { FileJobsService } from './services/file-jobs.service';
 import { I18nService, isLang, LANGS } from './services/i18n.service';
 import { SettingsService } from './services/settings.service';
 import { ToastService } from './services/toast.service';
+import { APP_VERSION } from '../generated/version';
 
 type Tab = 'text' | 'files';
 
@@ -32,7 +33,7 @@ export class App {
   protected readonly tab = signal<Tab>('text');
   protected readonly langs = LANGS;
   protected readonly repo = REPO_URL;
-  protected readonly version = '1.1.0';
+  protected readonly version = APP_VERSION;
   protected readonly engineLabel = computed(() => {
     const k = this.engine.kind();
     return k ? this.i18n.t(k === 'wasm' ? 'engine.wasm' : 'engine.js', { n: this.engine.threads }) : this.i18n.t('engine.loading');
