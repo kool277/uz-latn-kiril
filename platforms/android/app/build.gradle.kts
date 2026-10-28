@@ -14,8 +14,8 @@ android {
         applicationId = "uz.jaybi.uztranslit"
         minSdk = 24
         targetSdk = 37
-        versionCode = 5
-        versionName = "1.4.0"
+        versionCode = 6
+        versionName = "1.5.0"
     }
 
     // The upload key for Google Play (Play App Signing re-signs for users); README.md ▸ Signing. Only from the
