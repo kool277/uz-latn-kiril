@@ -55,6 +55,22 @@ public object UzDictionary {
         "kalkulyatsiya" to "калькуляция", "pavilyon" to "павильон", "pochtalyon" to "почтальон",
         "kompanyon" to "компаньон", "rayon" to "район", "mayor" to "майор", "mayonez" to "майонез",
         "mo'jiza" to "мўъжиза", "mo'tabar" to "мўътабар", "mo'tadil" to "мўътадил", "mo'jaz" to "мўъжаз",
+        "kontrol" to "контроль", "parol" to "пароль", "profil" to "профиль", "konsol" to "консоль",
+        "patrul" to "патруль", "alkogol" to "алкоголь", "ventil" to "вентиль", "akvarel" to "акварель",
+        "karusel" to "карусель", "vermishel" to "вермишель", "royal" to "рояль", "fonar" to "фонарь",
+        "inventar" to "инвентарь", "byulleten" to "бюллетень", "kartofel" to "картофель", "fasol" to "фасоль",
+        "dirijabl" to "дирижабль", "folklor" to "фольклор", "palma" to "пальма", "almanax" to "альманах",
+        "volfram" to "вольфрам", "kobalt" to "кобальт", "bolshevik" to "большевик", "kulminatsiya" to "кульминация",
+        "multfilm" to "мультфильм", "multi" to "мульти", "bilyard" to "бильярд", "kalyan" to "кальян",
+        "ssenariy" to "сценарий", "aksioner" to "акционер", "ofitsiant" to "официант", "ofitsial" to "официал",
+        "patsient" to "пациент", "patsiyent" to "пациент", "meditsina" to "медицина", "vaksina" to "вакцина",
+        "kansler" to "канцлер", "kanselyariya" to "канцелярия", "glitserin" to "глицерин",
+        "konsentrat" to "концентрат", "farmatsevt" to "фармацевт", "intsident" to "инцидент",
+        "provinsiya" to "провинция", "kompetensiya" to "компетенция", "tendensiya" to "тенденция",
+        "rezidensiya" to "резиденция", "konkurensiya" to "конкуренция", "prinsip" to "принцип",
+        "dotsent" to "доцент", "sotsiolog" to "социолог", "assotsiatsiya" to "ассоциация", "retsept" to "рецепт",
+        "retsenziya" to "рецензия", "retsenzent" to "рецензент", "polsha" to "польша",
+        "dezinfeksiya" to "дезинфекция", "podyezd" to "подъезд", "syezd" to "съезд", "obyom" to "объём",
     )
 
     private val values: Map<String, String> = entries.toMap()

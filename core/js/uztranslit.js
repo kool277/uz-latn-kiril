@@ -11,7 +11,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '1.1.0';
+  var VERSION = '1.2.0';
   var OKINA = 'ʻ';   // ʻ  used in Oʻ Gʻ
   var TUTUQ = 'ʼ';   // ʼ  tutuq belgisi
 
@@ -119,7 +119,19 @@
     'kreml кремль|alpinist альпинист|alpinizm альпинизм|konsult консульт|rezultat результат|fakultet факультет|' +
     'fakultativ факультатив|kalkulyator калькулятор|kalkulyatsiya калькуляция|' +
     'pavilyon павильон|pochtalyon почтальон|kompanyon компаньон|rayon район|mayor майор|mayonez майонез|' +
-    "mo'jiza мўъжиза|mo'tabar мўътабар|mo'tadil мўътадил|mo'jaz мўъжаз";
+    "mo'jiza мўъжиза|mo'tabar мўътабар|mo'tadil мўътадил|mo'jaz мўъжаз|" +
+    'kontrol контроль|parol пароль|profil профиль|konsol консоль|patrul патруль|alkogol алкоголь|' +
+    'ventil вентиль|akvarel акварель|karusel карусель|vermishel вермишель|royal рояль|fonar фонарь|' +
+    'inventar инвентарь|byulleten бюллетень|kartofel картофель|fasol фасоль|dirijabl дирижабль|' +
+    'folklor фольклор|palma пальма|almanax альманах|volfram вольфрам|kobalt кобальт|bolshevik большевик|' +
+    'kulminatsiya кульминация|multfilm мультфильм|multi мульти|bilyard бильярд|kalyan кальян|' +
+    'ssenariy сценарий|aksioner акционер|ofitsiant официант|ofitsial официал|patsient пациент|' +
+    'patsiyent пациент|meditsina медицина|vaksina вакцина|kansler канцлер|kanselyariya канцелярия|' +
+    'glitserin глицерин|konsentrat концентрат|farmatsevt фармацевт|intsident инцидент|provinsiya провинция|' +
+    'kompetensiya компетенция|tendensiya тенденция|rezidensiya резиденция|konkurensiya конкуренция|' +
+    'prinsip принцип|dotsent доцент|sotsiolog социолог|assotsiatsiya ассоциация|retsept рецепт|' +
+    'retsenziya рецензия|retsenzent рецензент|polsha польша|dezinfeksiya дезинфекция|podyezd подъезд|' +
+    'syezd съезд|obyom объём';
   var DICT = {};
   var DICT_KEYS = [];
   (function () {

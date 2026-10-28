@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-uztranslit v1.1.0 — Uzbek script converter (Python port of spec/SPEC.md)
+uztranslit v1.2.0 — Uzbek script converter (Python port of spec/SPEC.md)
 Cyrillic (1940) <-> Latin 1995 <-> Latin 2026 (O'RQ-1184: Oʻ→Ö, Gʻ→Ğ, Sh→Ş, Ch→Ç)
 
     from uztranslit import convert, detect
@@ -14,7 +14,7 @@ Zero dependencies; Python 3.6+ (also runs inside LibreOffice's bundled Python). 
 import re
 import sys
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 OKINA = "ʻ"   # ʻ  in Oʻ Gʻ
 TUTUQ = "ʼ"   # ʼ  tutuq belgisi
 
@@ -131,7 +131,19 @@ _DICT_SRC = (
     "kult культ|tyulpan тюльпан|shampun шампунь|kreml кремль|alpinist альпинист|alpinizm альпинизм|"
     "konsult консульт|rezultat результат|fakultet факультет|fakultativ факультатив|kalkulyator калькулятор|"
     "kalkulyatsiya калькуляция|pavilyon павильон|pochtalyon почтальон|kompanyon компаньон|rayon район|"
-    "mayor майор|mayonez майонез|mo'jiza мўъжиза|mo'tabar мўътабар|mo'tadil мўътадил|mo'jaz мўъжаз"
+    "mayor майор|mayonez майонез|mo'jiza мўъжиза|mo'tabar мўътабар|mo'tadil мўътадил|mo'jaz мўъжаз|"
+    "kontrol контроль|parol пароль|profil профиль|konsol консоль|patrul патруль|alkogol алкоголь|"
+    "ventil вентиль|akvarel акварель|karusel карусель|vermishel вермишель|royal рояль|fonar фонарь|"
+    "inventar инвентарь|byulleten бюллетень|kartofel картофель|fasol фасоль|dirijabl дирижабль|"
+    "folklor фольклор|palma пальма|almanax альманах|volfram вольфрам|kobalt кобальт|bolshevik большевик|"
+    "kulminatsiya кульминация|multfilm мультфильм|multi мульти|bilyard бильярд|kalyan кальян|"
+    "ssenariy сценарий|aksioner акционер|ofitsiant официант|ofitsial официал|patsient пациент|"
+    "patsiyent пациент|meditsina медицина|vaksina вакцина|kansler канцлер|kanselyariya канцелярия|"
+    "glitserin глицерин|konsentrat концентрат|farmatsevt фармацевт|intsident инцидент|provinsiya провинция|"
+    "kompetensiya компетенция|tendensiya тенденция|rezidensiya резиденция|konkurensiya конкуренция|"
+    "prinsip принцип|dotsent доцент|sotsiolog социолог|assotsiatsiya ассоциация|retsept рецепт|"
+    "retsenziya рецензия|retsenzent рецензент|polsha польша|dezinfeksiya дезинфекция|podyezd подъезд|"
+    "syezd съезд|obyom объём"
 )
 DICT = {}
 for _p in _DICT_SRC.split("|"):

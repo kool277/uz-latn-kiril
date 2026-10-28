@@ -1,4 +1,4 @@
-# UzTranslit — Uzbek script conversion specification (v1.1.0)
+# UzTranslit — Uzbek script conversion specification (v1.2.0)
 
 Single source of truth for every port (JS, Python, VBA, LibreOffice Basic, Kotlin, Swift, C++/Qt).
 A port is **conformant** when it passes every entry in `fixtures.json` (`cases`, `roundtrips`, `detect`) with default options.
@@ -215,6 +215,17 @@ kreml кремль · alpinist альпинист · alpinizm альпинизм
 fakultativ факультатив · kalkulyator калькулятор · kalkulyatsiya калькуляция
 pavilyon павильон · pochtalyon почтальон · kompanyon компаньон · rayon район · mayor майор · mayonez майонез
 mo'jiza мўъжиза · mo'tabar мўътабар · mo'tadil мўътадил · mo'jaz мўъжаз
+kontrol контроль · parol пароль · profil профиль · konsol консоль · patrul патруль · alkogol алкоголь · 
+ventil вентиль · akvarel акварель · karusel карусель · vermishel вермишель · royal рояль · fonar фонарь · 
+inventar инвентарь · byulleten бюллетень · kartofel картофель · fasol фасоль · dirijabl дирижабль · 
+folklor фольклор · palma пальма · almanax альманах · volfram вольфрам · kobalt кобальт · bolshevik большевик · 
+kulminatsiya кульминация · multfilm мультфильм · multi мульти · bilyard бильярд · kalyan кальян · ssenariy сценарий · 
+aksioner акционер · ofitsiant официант · ofitsial официал · patsient пациент · patsiyent пациент · 
+meditsina медицина · vaksina вакцина · kansler канцлер · kanselyariya канцелярия · glitserin глицерин · 
+konsentrat концентрат · farmatsevt фармацевт · intsident инцидент · provinsiya провинция · kompetensiya компетенция · 
+tendensiya тенденция · rezidensiya резиденция · konkurensiya конкуренция · prinsip принцип · dotsent доцент · 
+sotsiolog социолог · assotsiatsiya ассоциация · retsept рецепт · retsenziya рецензия · retsenzent рецензент · 
+polsha польша · dezinfeksiya дезинфекция · podyezd подъезд · syezd съезд · obyom объём
 ```
 Ports may extend the list; `fixtures.json` only relies on the entries marked "dictionary" in its notes.
 

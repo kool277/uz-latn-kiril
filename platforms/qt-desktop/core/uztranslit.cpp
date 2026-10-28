@@ -203,7 +203,19 @@ constexpr std::u16string_view DICT_SRC =
     u"kult культ|tyulpan тюльпан|shampun шампунь|kreml кремль|alpinist альпинист|alpinizm альпинизм|"
     u"konsult консульт|rezultat результат|fakultet факультет|fakultativ факультатив|kalkulyator калькулятор|"
     u"kalkulyatsiya калькуляция|pavilyon павильон|pochtalyon почтальон|kompanyon компаньон|rayon район|"
-    u"mayor майор|mayonez майонез|mo'jiza мўъжиза|mo'tabar мўътабар|mo'tadil мўътадил|mo'jaz мўъжаз";
+    u"mayor майор|mayonez майонез|mo'jiza мўъжиза|mo'tabar мўътабар|mo'tadil мўътадил|mo'jaz мўъжаз|"
+    u"kontrol контроль|parol пароль|profil профиль|konsol консоль|patrul патруль|alkogol алкоголь|"
+    u"ventil вентиль|akvarel акварель|karusel карусель|vermishel вермишель|royal рояль|fonar фонарь|"
+    u"inventar инвентарь|byulleten бюллетень|kartofel картофель|fasol фасоль|dirijabl дирижабль|"
+    u"folklor фольклор|palma пальма|almanax альманах|volfram вольфрам|kobalt кобальт|bolshevik большевик|"
+    u"kulminatsiya кульминация|multfilm мультфильм|multi мульти|bilyard бильярд|kalyan кальян|"
+    u"ssenariy сценарий|aksioner акционер|ofitsiant официант|ofitsial официал|patsient пациент|"
+    u"patsiyent пациент|meditsina медицина|vaksina вакцина|kansler канцлер|kanselyariya канцелярия|"
+    u"glitserin глицерин|konsentrat концентрат|farmatsevt фармацевт|intsident инцидент|provinsiya провинция|"
+    u"kompetensiya компетенция|tendensiya тенденция|rezidensiya резиденция|konkurensiya конкуренция|"
+    u"prinsip принцип|dotsent доцент|sotsiolog социолог|assotsiatsiya ассоциация|retsept рецепт|"
+    u"retsenziya рецензия|retsenzent рецензент|polsha польша|dezinfeksiya дезинфекция|podyezd подъезд|"
+    u"syezd съезд|obyom объём";
 
 struct DictEntry
 {

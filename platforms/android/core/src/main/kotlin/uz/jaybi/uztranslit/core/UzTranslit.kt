@@ -15,7 +15,7 @@ package uz.jaybi.uztranslit.core
  * The object is immutable after initialisation and safe to use from any thread.
  */
 public object UzTranslit {
-    public const val VERSION: String = "1.1.0"
+    public const val VERSION: String = "1.2.0"
 
     /** ʻ (U+02BB), the mark in Oʻ and Gʻ (output of `lat`). */
     public const val OKINA: String = "\u02BB"
