@@ -9,20 +9,20 @@ All six directions, with the rules that matter: е/э, ц → s/ts, ъ/ь, йў 
 
 | Part | Path | Status |
 |---|---|---|
-| Specification + 242-check conformance corpus | `spec/` | source of truth |
-| JavaScript core (browser/Node, UMD) | `core/js/uztranslit.js` | 242/242 ✔ |
-| Python core + CLI | `core/python/uztranslit.py` | 242/242 ✔ |
-| WebAssembly core (AssemblyScript) + the same engine as plain JS (wasm2js) | `core/wasm/` | 242/242 ✔ both builds; identical to the JS core on 40,000 random conversions per build in CI (1.2M checked once) |
-| Web app for **https://latin.jaybi.uz** — Angular 22, WebAssembly on every CPU core, text **and documents**, PWA/offline | `web/` | 242/242 ✔ both engines · 559 engine tests · 19 Playwright tests |
-| MS Office macro module (Word/Excel/PowerPoint 97 → 2026, VBA 5–7) | `office-vba/UzTranslit.bas` | engine executed in LibreOffice Basic VBA mode: 214/214 ✔, 3,500 differential ✔; document macros compiled + linted (Office itself not in CI) |
-| Desktop (Qt 6): Windows installer, macOS dmg, Linux AppImage — editor with live conversion, text/Markdown/SRT/HTML/XML files, folder batch, tray clipboard actions, `uztranslit` CLI | `platforms/qt-desktop/` | C++ core 242/242 ✔, 22,000 differential ✔, 7 ctest suites (CLI, GUI offscreen, documents, translations); packages built in CI, unsigned |
+| Specification + 246-check conformance corpus | `spec/` | source of truth |
+| JavaScript core (browser/Node, UMD) | `core/js/uztranslit.js` | 246/246 ✔ |
+| Python core + CLI | `core/python/uztranslit.py` | 246/246 ✔ |
+| WebAssembly core (AssemblyScript) + the same engine as plain JS (wasm2js) | `core/wasm/` | 246/246 ✔ both builds; identical to the JS core on 40,000 random conversions per build in CI (1.2M checked once) |
+| Web app for **https://latin.jaybi.uz** — Angular 22, WebAssembly on every CPU core, text **and documents**, PWA/offline | `web/` | 246/246 ✔ both engines · 567 engine tests · 19 Playwright tests |
+| MS Office macro module (Word/Excel/PowerPoint 97 → 2026, VBA 5–7) | `office-vba/UzTranslit.bas` | engine executed in LibreOffice Basic VBA mode: 244/244 ✔, 3,500 differential ✔; document macros compiled + linted (Office itself not in CI) |
+| Desktop (Qt 6): Windows installer, macOS dmg, Linux AppImage — editor with live conversion, text/Markdown/SRT/HTML/XML files, folder batch, tray clipboard actions, `uztranslit` CLI | `platforms/qt-desktop/` | C++ core 246/246 ✔, 22,000 differential ✔, 7 ctest suites (CLI, GUI offscreen, documents, translations); packages built in CI, unsigned |
 | Office ribbon tab (2007+): `UzTranslitRibbon.bas` + `office-vba/ribbon/`, put into a .dotm/.xlam/.ppam by `tools/add_ribbon.py` | `office-vba/ribbon/` | injection tested on Word/Excel/PowerPoint files; `UzSelfTest` 29/29 in CI |
 | Office installer for Windows: `UzTranslit-<version>-Office-Setup.exe` (PyInstaller) builds `UzTranslit.dotm` / `UzTranslit.xlam` with Word and Excel through COM, adds the ribbon, puts them into STARTUP / XLSTART | `platforms/office-installer/` | 28 checks against fake Word/Excel; exe built and started on Windows in CI (no Office in CI) |
 | Office add-in (Office.js) for Word, Excel, PowerPoint on the web, Mac, iPad and Microsoft 365, served at latin.jaybi.uz/office | `platforms/office-addin/` | manifests valid (Microsoft validator); logic tested against fake hosts + the 20,000-case corpus; task pane tested in Chromium |
 | LibreOffice extension (menu Tools ▸ UzTranslit) | `libreoffice/uztranslit-libreoffice.oxt` | installed + e2e-tested in Writer/Calc/Impress ✔ |
 | LibreOffice Basic module / Python edition | `libreoffice/UzTranslitLO.bas`, `uztranslit-libreoffice-python.oxt` | ✔ / needs Python provider |
-| Android 7+ — Kotlin core + Compose app: live converter, *Process text* menu on selected text, share sheet, .txt files, Quick Settings tile | `platforms/android/` | Kotlin core 242/242 ✔, 20,000 differential ✔, 294 JVM tests; signed release APK + bundle built in CI and started on an emulator |
-| iOS / iPadOS / macOS — Swift package `UzTranslitCore`, SwiftUI app with Share and Action extensions, macOS app with a Services menu item | `platforms/ios/` | Swift core 242/242 ✔, 20,000 differential ✔ (Linux, CI); apps built unsigned on macOS in CI — signing/TestFlight need your Apple team (`platforms/ios/README.md`) |
+| Android 7+ — Kotlin core + Compose app: live converter, *Process text* menu on selected text, share sheet, .txt files, Quick Settings tile | `platforms/android/` | Kotlin core 246/246 ✔, 20,000 differential ✔, 298 JVM tests; signed release APK + bundle built in CI and started on an emulator |
+| iOS / iPadOS / macOS — Swift package `UzTranslitCore`, SwiftUI app with Share and Action extensions, macOS app with a Services menu item | `platforms/ios/` | Swift core 246/246 ✔, 20,000 differential ✔ (Linux, CI); apps built unsigned on macOS in CI — signing/TestFlight need your Apple team (`platforms/ios/README.md`) |
 | Claude Code master prompt (Android, iOS, Qt 6, Office.js add-in, CI, releases) | `CLAUDE_CODE_PROMPT.md` + `CLAUDE.md` | run it |
 
 ## Downloads
@@ -35,8 +35,8 @@ macros and ribbon kit, Office add-in manifest, LibreOffice extensions and the we
 ## Quick start
 
 ```bash
-node core/js/test.js                              # 242 passed
-python3 core/python/test_uztranslit.py            # 242 passed
+node core/js/test.js                              # 246 passed
+python3 core/python/test_uztranslit.py            # 246 passed
 echo "O'zbekiston Respublikasi" | python3 core/python/uztranslit.py --to new      # Özbekiston Respublikasi
 echo "Toshkent shahri" | python3 core/python/uztranslit.py --to cyr              # Тошкент шаҳри
 ```

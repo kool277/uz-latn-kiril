@@ -4,7 +4,7 @@ UzTranslit converts Uzbek text between Cyrillic (`cyr`), Latin 1995 (`lat`) and 
 `CLAUDE_CODE_PROMPT.md` is the phased plan (all phases built; releases come from a `v*` tag via `release.yml`).
 
 ## Source of truth
-- `spec/SPEC.md` defines the algorithm; `spec/fixtures.json` defines correctness (242 checks). Both are versioned together.
+- `spec/SPEC.md` defines the algorithm; `spec/fixtures.json` defines correctness (246 checks). Both are versioned together.
 - A conversion rule is changed **only** by editing the spec and fixtures first, then every port. Never patch one port.
 - Ports: `core/js` (reference), `core/python`, `core/wasm` (AssemblyScript → WebAssembly, plus the same engine translated
   to plain JS by wasm2js), `office-vba` (VBA 5–7, also feeds `libreoffice/` through `tools/make_lo_basic.py`),

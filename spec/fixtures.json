@@ -1,5 +1,5 @@
 {
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Shared conformance corpus. EVERY port (JS, Python, VBA, LibreOffice Basic, Kotlin, Swift, C++/Qt) must pass all 'cases', 'roundtrips' and 'detect' entries with default options. 'optional' entries test features that only some ports implement.",
   "apostrophes": { "okina": "ʻ", "tutuq": "ʼ" },
   "cases": [
@@ -178,6 +178,10 @@
     { "id": "l2c-89", "from": "lat", "to": "cyr", "in": "Prinsip, meditsina, vaksinatsiya, patsiyent", "out": "Принцип, медицина, вакцинация, пациент", "note": "dictionary: ц" },
     { "id": "l2c-90", "from": "lat", "to": "cyr", "in": "Polshada multfilm va folklor", "out": "Польшада мультфильм ва фольклор", "note": "dictionary" },
     { "id": "l2c-91", "from": "lat", "to": "cyr", "in": "podyezd, syezd, sotsiolog, sotsiologiya", "out": "подъезд, съезд, социолог, социология", "note": "dictionary: ъ; longest key wins" },
+    { "id": "l2c-92", "from": "lat", "to": "cyr", "in": "Sudya ultimatum berdi, nikel va kalsiy filtrdan o‘tdi", "out": "Судья ультиматум берди, никель ва кальций фильтрдан ўтди", "note": "dictionary: ь" },
+    { "id": "l2c-93", "from": "lat", "to": "cyr", "in": "Konvensiya, matritsa, genotsid, publitsistik maqola", "out": "Конвенция, матрица, геноцид, публицистик мақола", "note": "dictionary: ц" },
+    { "id": "l2c-94", "from": "lat", "to": "cyr", "in": "Meyorlar, Toyota, mikrorayonda shoʻba", "out": "Меъёрлар, Тойота, микрорайонда шўъба", "note": "dictionary: ъ, йо" },
+    { "id": "l2c-95", "from": "lat", "to": "cyr", "in": "ultrabinafsha, modulyatsiya, Kiselev, Al-Fargʻoniy, sitora", "out": "ультрабинафша, модуляция, Киселев, Ал-Фарғоний, ситора", "note": "dictionary: suffixed stems; no key catches these native words and names" },
 
     { "id": "n2c-01", "from": "new", "to": "cyr", "in": "Özbekiston", "out": "Ўзбекистон" },
     { "id": "n2c-02", "from": "new", "to": "cyr", "in": "Ğalaba", "out": "Ғалаба" },

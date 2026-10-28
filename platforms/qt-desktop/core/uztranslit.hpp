@@ -13,7 +13,7 @@
 
 namespace uztranslit {
 
-inline constexpr char VERSION[] = "1.2.0";
+inline constexpr char VERSION[] = "1.3.0";
 inline constexpr char16_t OKINA = u'ʻ'; // okina, used in Oʻ Gʻ
 inline constexpr char16_t TUTUQ = u'ʼ'; // tutuq belgisi
 

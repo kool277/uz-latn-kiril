@@ -1,4 +1,4 @@
-# UzTranslit — Uzbek script conversion specification (v1.2.0)
+# UzTranslit — Uzbek script conversion specification (v1.3.0)
 
 Single source of truth for every port (JS, Python, VBA, LibreOffice Basic, Kotlin, Swift, C++/Qt).
 A port is **conformant** when it passes every entry in `fixtures.json` (`cases`, `roundtrips`, `detect`) with default options.
@@ -225,7 +225,45 @@ meditsina медицина · vaksina вакцина · kansler канцлер �
 konsentrat концентрат · farmatsevt фармацевт · intsident инцидент · provinsiya провинция · kompetensiya компетенция · 
 tendensiya тенденция · rezidensiya резиденция · konkurensiya конкуренция · prinsip принцип · dotsent доцент · 
 sotsiolog социолог · assotsiatsiya ассоциация · retsept рецепт · retsenziya рецензия · retsenzent рецензент · 
-polsha польша · dezinfeksiya дезинфекция · podyezd подъезд · syezd съезд · obyom объём
+polsha польша · dezinfeksiya дезинфекция · podyezd подъезд · syezd съезд · obyom объём · 
+alyans альянс · apelsin апельсин · artel артель · aerozol аэрозоль · binokl бинокль · bulvar бульвар · 
+buldozer бульдозер · vestibyul вестибюль · gantel гантель · grifel грифель · impuls импульс · 
+insult инсульт · kalsiy кальций · kanifol канифоль · karamel карамель · kartel картель · kokteyl коктейль · 
+korabl корабль · lager лагерь · konslager концлагерь · menshevik меньшевик · modul модуль · 
+molbert мольберт · nikel никель · nobel нобель · pelmen пельмень · porshen поршень · rels рельс · 
+skalpel скальпель · sterjen стержень · sudya судья · tunnel туннель · tyulen тюлень · ultra ультра · 
+ultimatum ультиматум · feldsher фельдшер · feldmarshal фельдмаршал · filtr фильтр · fotoalbom фотоальбом · 
+kinofilm кинофильм · videofilm видеофильм · xolodilnik холодильник · shnitsel шницель · shpatel шпатель · 
+shtepsel штепсель · gilyotina гильотина · avtomagistral автомагистраль · podyom подъём · natalya наталья · 
+igor игорь · lyubov любовь · sofya софья · solovyov соловьёв · muravyov муравьёв · lukyanov лукьянов · 
+kasyanov касьянов · yemelyanov емельянов · vitse вице · meriya мэрия · konvensiya конвенция · 
+intervensiya интервенция · shveysariya швейцария · mototsikl мотоцикл · genotsid геноцид · suitsid суицид · 
+pestitsid пестицид · gerbitsid гербицид · insektitsid инсектицид · fungitsid фунгицид · natsist нацист · 
+neonatsist неонацист · natsizm нацизм · radiostansiya радиостанция · elektrostansiya электростанция · 
+gidroelektrostansiya гидроэлектростанция · avtostansiya автостанция · yurisprudensiya юриспруденция · 
+kontratsepsiya контрацепция · epitsentr эпицентр · karser карцер · insident инцидент · pretsedent прецедент · 
+dissiplina дисциплина · konsorsium консорциум · korrupsion коррупцион · matritsa матрица · 
+prezumpsiya презумпция · pritsep прицеп · proteksionizm протекционизм · publitsist публицист · 
+reaksion реакцион · spetsnaz спецназ · defitsit дефицит · koeffitsiyent коэффициент · 
+koeffitsient коэффициент · mikrorayon микрорайон · videokonferensiya видеоконференция · 
+korrespondensiya корреспонденция · intelligensiya интеллигенция · inersiya инерция · deduksiya дедукция · 
+abstraksiya абстракция · attraksion аттракцион · seleksiya селекция · proyeksiya проекция · 
+distansion дистанцион · konsept концепт · metsenat меценат · retsidiv рецидив · abzas абзац · gersog герцог · 
+ritsar рицарь · senariy сценарий · siferblat циферблат · sitoplazma цитоплазма · sitolog цитолог · 
+seziy цезий · sistit цистит · pitsa пицца · pitseriya пиццерия · sotsium социум · initsiat инициат · 
+detsibel децибел · yelsin ельцин · sho'ba шўъба · mo'tamad мўътамад · no'mon нўъмон · meyor меъёр · 
+toyota тойота · atset ацет · publitsistik публицистик · klassitsizm классицизм · 
+neoklassitsizm неоклассицизм · katolitsizm католицизм · agnostitsizm агностицизм · eritrotsit эритроцит · 
+leykotsit лейкоцит · limfotsit лимфоцит · fagotsit фагоцит · antitsiklon антициклон · frantsuz француз · 
+konfutsiy конфуций · munitsipal муниципал · mitseliy мицелий · biotsenoz биоценоз · 
+biogeotsenoz биогеоценоз · pliotsen плиоцен · paleotsen палеоцен · eotsen эоцен · oligotsen олигоцен · 
+miotsen миоцен · nitsshe ницше · monatsit монацит · pretsessiya прецессия · mikroprotsessor микропроцессор · 
+kaltsiy кальций · kaltsit кальцит · sitsiliya сицилия · penitsillin пенициллин · streptomitsin стрептомицин · 
+motsart моцарт · triglitserid триглицерид · nitroglitserin нитроглицерин · retsessiv рецессив · 
+potentsial потенциал · dissotsiatsiya диссоциация · detsimetr дециметр · geotsentrik геоцентрик · 
+geliotsentrik гелиоцентрик · akaritsid акарицид · bakteritsid бактерицид · silitsid силицид · 
+kontseptsiya концепция · printsip принцип · atstek ацтек · cherepitsa черепица · aristotel аристотель · 
+gastrol гастроль · emuls эмульс · delta дельта · galvan гальван
 ```
 Ports may extend the list; `fixtures.json` only relies on the entries marked "dictionary" in its notes.
 
