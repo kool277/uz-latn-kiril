@@ -52,7 +52,7 @@ jobs:
           cp office-vba/UzTranslit.bas office-vba/UzTranslitRibbon.bas tools/add_ribbon.py docs/OFFICE_INSTALL.md kit/
           sed -i 's|os.path.join(ROOT, "office-vba", "ribbon")|os.path.join(os.path.dirname(os.path.abspath(__file__)), "ribbon")|' kit/add_ribbon.py
           (cd kit && zip -qr ../dist/UzTranslit-ribbon-kit.zip .)
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           pattern: uztranslit-*
           path: artifacts
