@@ -37,7 +37,7 @@
     "jsdom": "^30.0.0",
     "prettier": "^3.8.1",
     "typescript": "~6.0.2",
-    "vitest": "^5.0.0"
+    "vitest": "^5.1.0"
   },
   "description": "latin.jaybi.uz \u2014 Uzbek Cyrillic \u21c4 Latin 1995 \u21c4 Latin 2026 converter for text and documents (Angular + WebAssembly)",
   "license": "MIT",
